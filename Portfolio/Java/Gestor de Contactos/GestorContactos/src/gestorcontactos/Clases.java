@@ -95,24 +95,30 @@ public class ListaContactos{
 }
 
 
-/*                                 UML:                                 * \
- ***-------------------***          |      ***-------------------***
- ***----------------***             |      ***----------------***
- ***    Contactos                   |      ***      Listas
- ***----------------***             |      ***----------------***
- *** + SetNombre: void              |      *** + agregarContacto: void
- *** + GetNombre: String            |      *** + eliminarContacto: void
- *** + SetNumero: void              |      *** + obtenerContactos: List<Contacto>
- *** + GetNumero: int               |      *** + buscarContactoPorNombre: Contacto
- *** + SetDireccion: void           |      *** + buscarContactoPorNumero: Contacto
- *** + GetDireccion: String         |      ***---------------***
- *** + SetEdad: void                |      *** - contactos: List<Contacto>
- *** + GetEdad: int                 |      ***---------------***
- ***----------------***             |      ***-------------------***
- *** - direccion: String            |
- *** - nombre: String               |
- *** - num: int                     |
- *** - edad: int                    |
- ***----------------***             |
- ***-------------------***          |
-/ *                                 |                                  */
+
+/*                                                                                   * \
+ |---------------------------------UML:-----------------------------------------------|
+ | ***-------------------***          |      ***-------------------***                |
+ | ***----------------***             |      ***----------------***                   |
+ | ***    Contactos                   |      ***      Listas                          |
+ | ***----------------***             |      ***----------------***                   |
+ | *** + SetNombre: void              |      *** + agregarContacto: void              |
+ | *** + GetNombre: String            |      *** + eliminarContacto: void             |
+ | *** + SetNumero: void              |      *** + obtenerContactos: List<Contacto>   |
+ | *** + GetNumero: int               |      *** + buscarContactoPorNombre: Contacto  |
+ | *** + SetDireccion: void           |      *** + buscarContactoPorNumero: Contacto  |
+ | *** + GetDireccion: String         |      ***---------------***                    |
+ | *** + SetEdad: void                |      *** - contactos: List<Contacto>          |
+ | *** + GetEdad: int                 |      ***---------------***                    |
+ | ***----------------***             |      ***-------------------***                |
+ | *** - direccion: String            |                                               |
+ | *** - nombre: String               |                                               |
+ | *** - num: int                     |                                               |
+ | *** - edad: int                    |                                               |
+ | ***----------------***             |                                               |
+ | ***-------------------***          |                                               |
+ |------------------------------------|-----------------------------------------------|
+                                      |
+                                      |
+                                      |
+/ *                                   |                                               */
