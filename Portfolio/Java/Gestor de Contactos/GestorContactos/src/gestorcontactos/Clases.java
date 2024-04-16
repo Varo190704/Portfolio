@@ -92,19 +92,19 @@ public class ListaContactos{
  ***----------------***             |      ***----------------***
  ***    Contactos                   |      ***      Listas
  ***----------------***             |      ***----------------***
- *** + SetNombre: void              |      ***
- *** + GetNombre: String            |      ***
- *** + SetNumero: void              |      ***
- *** + GetNumero: int               |      ***
- *** + SetDireccion: void           |      ***
- *** + GetDireccion: String         |      ***
- *** + SetEdad: void                |      ***
- *** + GetEdad: int                 |      ***
- ***----------------***             |      ***---------------***
- *** - direccion: String            |      ***
- *** - nombre: String               |      ***
- *** - num: int                     |      ***
- *** - edad: int                    |      ***
- ***----------------***             |      ***---------------***
- ***-------------------***          |      ***-------------------***
+ *** + SetNombre: void              |      *** + agregarContacto: void
+ *** + GetNombre: String            |      *** + eliminarContacto: void
+ *** + SetNumero: void              |      *** + obtenerContactos: List<Contacto>
+ *** + GetNumero: int               |      *** + buscarContactoPorNombre: Contacto
+ *** + SetDireccion: void           |      *** + buscarContactoPorNumero: Contacto
+ *** + GetDireccion: String         |      ***---------------***
+ *** + SetEdad: void                |      *** - contactos: List<Contacto>
+ *** + GetEdad: int                 |      ***---------------***
+ ***----------------***             |      ***-------------------***
+ *** - direccion: String            |
+ *** - nombre: String               |
+ *** - num: int                     |
+ *** - edad: int                    |
+ ***----------------***             |
+ ***-------------------***          |
 / *                                 |                                  */
