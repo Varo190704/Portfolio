@@ -4,7 +4,7 @@
  */
 package gestorcontactos;
 
-import Clases
+import Clases;
 
 public class GestorContactos {
     public static void main(String[] args) {

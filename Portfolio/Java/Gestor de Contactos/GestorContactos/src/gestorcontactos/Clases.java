@@ -5,16 +5,16 @@ import java.util.*;
 public class Contacto {
 
     private String direccion;
-    private String nombr;
-    private int num;
+    private String nombre;
+    private int numero;
     private int edad;
 
     public void setNombre(String nombre){
        this.nombre = nombre;
     }
 
-    public String getNombr() {
-       return nombr;
+    public String getNombre() {
+       return nombre;
     }
 
     public void setNumero(int numero){
@@ -22,7 +22,7 @@ public class Contacto {
     }
 
     public int getNumero() {
-        return num;
+        return numero;
     }
 
     public void setEdad(int edad){
@@ -42,10 +42,17 @@ public class Contacto {
     }
 
     public Contacto(String direccion, String nombr, int num, int edad){
-        this.direccion = direccion;
-        this.edad = edad;
-        this.numero = num;
-        this.nombre = nombr;
+        this.setDireccion(direccion);
+        this.setEdad(edad);
+        this.setNumero(num);
+        this.setNombre(nombr);
+    }
+
+    public String toString(){
+        return  this.getNombre() + " "
+                + this.getNumero() + " "
+                + this.getDireccion() + " "
+                + this.getEdad();
     }
 }
 
@@ -86,6 +93,7 @@ public class ListaContactos{
         return ("No hay contacto con tal numero"); // Si no se encuentra el contacto
     }
 }
+
 
 /*                                 UML:                                 * \
  ***-------------------***          |      ***-------------------***
