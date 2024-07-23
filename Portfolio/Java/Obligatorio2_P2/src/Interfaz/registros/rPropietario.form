@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<Form version="1.3" maxVersion="1.9" type="org.netbeans.modules.form.forminfo.JFrameFormInfo">
+  <Properties>
+    <Property name="defaultCloseOperation" type="int" value="2"/>
+    <Property name="title" type="java.lang.String" value="Registrando Propietario"/>
+  </Properties>
+  <SyntheticProperties>
+    <SyntheticProperty name="formSizePolicy" type="int" value="1"/>
+    <SyntheticProperty name="generateCenter" type="boolean" value="false"/>
+  </SyntheticProperties>
+  <AuxValues>
+    <AuxValue name="FormSettings_autoResourcing" type="java.lang.Integer" value="0"/>
+    <AuxValue name="FormSettings_autoSetComponentName" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_generateFQN" type="java.lang.Boolean" value="true"/>
+    <AuxValue name="FormSettings_generateMnemonicsCode" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_i18nAutoMode" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_layoutCodeTarget" type="java.lang.Integer" value="1"/>
+    <AuxValue name="FormSettings_listenerGenerationStyle" type="java.lang.Integer" value="0"/>
+    <AuxValue name="FormSettings_variablesLocal" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_variablesModifier" type="java.lang.Integer" value="2"/>
+  </AuxValues>
+
+  <Layout>
+    <DimensionLayout dim="0">
+      <Group type="103" groupAlignment="0" attributes="0">
+          <Component id="jPanel1" min="-2" max="-2" attributes="0"/>
+      </Group>
+    </DimensionLayout>
+    <DimensionLayout dim="1">
+      <Group type="103" groupAlignment="0" attributes="0">
+          <Component id="jPanel1" min="-2" max="-2" attributes="0"/>
+      </Group>
+    </DimensionLayout>
+  </Layout>
+  <SubComponents>
+    <Container class="javax.swing.JPanel" name="jPanel1">
+
+      <Layout>
+        <DimensionLayout dim="0">
+          <Group type="103" groupAlignment="0" attributes="0">
+              <Group type="102" alignment="0" attributes="0">
+                  <EmptySpace min="-2" pref="27" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="0" attributes="0">
+                      <Component id="add" min="-2" pref="249" max="-2" attributes="0"/>
+                      <Component id="nombre" min="-2" pref="159" max="-2" attributes="0"/>
+                      <Component id="cedu" min="-2" pref="159" max="-2" attributes="0"/>
+                      <Component id="jLabel4" alignment="0" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
+                      <Group type="102" alignment="0" attributes="0">
+                          <Component id="codigoCount" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace type="separate" max="-2" attributes="0"/>
+                          <Component id="num" min="-2" pref="159" max="-2" attributes="0"/>
+                      </Group>
+                      <Component id="direc" alignment="0" min="-2" pref="159" max="-2" attributes="0"/>
+                  </Group>
+                  <EmptySpace min="-2" pref="27" max="-2" attributes="0"/>
+              </Group>
+          </Group>
+        </DimensionLayout>
+        <DimensionLayout dim="1">
+          <Group type="103" groupAlignment="0" attributes="0">
+              <Group type="102" alignment="0" attributes="0">
+                  <EmptySpace min="-2" pref="20" max="-2" attributes="0"/>
+                  <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
+                  <EmptySpace type="separate" max="-2" attributes="0"/>
+                  <Component id="nombre" min="-2" pref="31" max="-2" attributes="0"/>
+                  <EmptySpace min="-2" pref="26" max="-2" attributes="0"/>
+                  <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
+                  <EmptySpace type="separate" max="-2" attributes="0"/>
+                  <Component id="cedu" min="-2" pref="31" max="-2" attributes="0"/>
+                  <EmptySpace min="-2" pref="26" max="-2" attributes="0"/>
+                  <Component id="jLabel3" min="-2" max="-2" attributes="0"/>
+                  <EmptySpace type="separate" max="-2" attributes="0"/>
+                  <Component id="direc" min="-2" pref="31" max="-2" attributes="0"/>
+                  <EmptySpace min="-2" pref="26" max="-2" attributes="0"/>
+                  <Component id="jLabel4" min="-2" max="-2" attributes="0"/>
+                  <EmptySpace min="-2" pref="18" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="3" attributes="0">
+                      <Component id="num" alignment="3" min="-2" pref="31" max="-2" attributes="0"/>
+                      <Component id="codigoCount" alignment="3" min="-2" pref="31" max="-2" attributes="0"/>
+                  </Group>
+                  <EmptySpace min="-2" pref="33" max="-2" attributes="0"/>
+                  <Component id="add" min="-2" pref="31" max="-2" attributes="0"/>
+                  <EmptySpace min="-2" pref="20" max="-2" attributes="0"/>
+              </Group>
+          </Group>
+        </DimensionLayout>
+      </Layout>
+      <SubComponents>
+        <Component class="javax.swing.JLabel" name="jLabel1">
+          <Properties>
+            <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+              <Font name="Segoe UI" size="12" style="1"/>
+            </Property>
+            <Property name="text" type="java.lang.String" value="Nombre"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JLabel" name="jLabel2">
+          <Properties>
+            <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+              <Font name="Segoe UI" size="12" style="1"/>
+            </Property>
+            <Property name="text" type="java.lang.String" value="C&#xe9;dula"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JLabel" name="jLabel3">
+          <Properties>
+            <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+              <Font name="Segoe UI" size="12" style="1"/>
+            </Property>
+            <Property name="text" type="java.lang.String" value="Direcci&#xf3;n"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JLabel" name="jLabel4">
+          <Properties>
+            <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+              <Font name="Segoe UI" size="12" style="1"/>
+            </Property>
+            <Property name="text" type="java.lang.String" value="N&#xfa;mero de celular"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JTextField" name="num">
+          <Properties>
+            <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+              <Font name="Segoe UI" size="12" style="1"/>
+            </Property>
+            <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+              <Color blue="99" green="99" red="99" type="rgb"/>
+            </Property>
+            <Property name="text" type="java.lang.String" value="91111111 "/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JComboBox" name="codigoCount">
+          <Properties>
+            <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+              <Font name="Segoe UI" size="12" style="1"/>
+            </Property>
+            <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+              <Color blue="99" green="99" red="99" type="rgb"/>
+            </Property>
+            <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
+              <StringArray count="191">
+                <StringItem index="0" value="+93"/>
+                <StringItem index="1" value="+355"/>
+                <StringItem index="2" value="+213"/>
+                <StringItem index="3" value="+376"/>
+                <StringItem index="4" value="+244"/>
+                <StringItem index="5" value="+54"/>
+                <StringItem index="6" value="+374"/>
+                <StringItem index="7" value="+61"/>
+                <StringItem index="8" value="+43"/>
+                <StringItem index="9" value="+994"/>
+                <StringItem index="10" value="+1-242"/>
+                <StringItem index="11" value="+973"/>
+                <StringItem index="12" value="+880"/>
+                <StringItem index="13" value="+1-246"/>
+                <StringItem index="14" value="+375"/>
+                <StringItem index="15" value="+32"/>
+                <StringItem index="16" value="+501"/>
+                <StringItem index="17" value="+229"/>
+                <StringItem index="18" value="+975"/>
+                <StringItem index="19" value="+591"/>
+                <StringItem index="20" value="+387"/>
+                <StringItem index="21" value="+267"/>
+                <StringItem index="22" value="+55"/>
+                <StringItem index="23" value="+673"/>
+                <StringItem index="24" value="+359"/>
+                <StringItem index="25" value="+226"/>
+                <StringItem index="26" value="+257"/>
+                <StringItem index="27" value="+238"/>
+                <StringItem index="28" value="+855"/>
+                <StringItem index="29" value="+237"/>
+                <StringItem index="30" value="+1"/>
+                <StringItem index="31" value="+235"/>
+                <StringItem index="32" value="+56"/>
+                <StringItem index="33" value="+86"/>
+                <StringItem index="34" value="+57"/>
+                <StringItem index="35" value="+269"/>
+                <StringItem index="36" value="+243"/>
+                <StringItem index="37" value="+242"/>
+                <StringItem index="38" value="+506"/>
+                <StringItem index="39" value="+385"/>
+                <StringItem index="40" value="+53"/>
+                <StringItem index="41" value="+357"/>
+                <StringItem index="42" value="+420"/>
+                <StringItem index="43" value="+45"/>
+                <StringItem index="44" value="+253"/>
+                <StringItem index="45" value="+1-767"/>
+                <StringItem index="46" value="+1-809"/>
+                <StringItem index="47" value="+1-829"/>
+                <StringItem index="48" value="+1-849"/>
+                <StringItem index="49" value="+593"/>
+                <StringItem index="50" value="+20"/>
+                <StringItem index="51" value="+503"/>
+                <StringItem index="52" value="+240"/>
+                <StringItem index="53" value="+291"/>
+                <StringItem index="54" value="+372"/>
+                <StringItem index="55" value="+268"/>
+                <StringItem index="56" value="+251"/>
+                <StringItem index="57" value="+679"/>
+                <StringItem index="58" value="+358"/>
+                <StringItem index="59" value="+33"/>
+                <StringItem index="60" value="+241"/>
+                <StringItem index="61" value="+220"/>
+                <StringItem index="62" value="+995"/>
+                <StringItem index="63" value="+49"/>
+                <StringItem index="64" value="+233"/>
+                <StringItem index="65" value="+30"/>
+                <StringItem index="66" value="+1-473"/>
+                <StringItem index="67" value="+502"/>
+                <StringItem index="68" value="+224"/>
+                <StringItem index="69" value="+245"/>
+                <StringItem index="70" value="+592"/>
+                <StringItem index="71" value="+509"/>
+                <StringItem index="72" value="+504"/>
+                <StringItem index="73" value="+36"/>
+                <StringItem index="74" value="+354"/>
+                <StringItem index="75" value="+91"/>
+                <StringItem index="76" value="+62"/>
+                <StringItem index="77" value="+98"/>
+                <StringItem index="78" value="+964"/>
+                <StringItem index="79" value="+353"/>
+                <StringItem index="80" value="+972"/>
+                <StringItem index="81" value="+39"/>
+                <StringItem index="82" value="+225"/>
+                <StringItem index="83" value="+1-876"/>
+                <StringItem index="84" value="+81"/>
+                <StringItem index="85" value="+962"/>
+                <StringItem index="86" value="+7"/>
+                <StringItem index="87" value="+254"/>
+                <StringItem index="88" value="+686"/>
+                <StringItem index="89" value="+850"/>
+                <StringItem index="90" value="+82"/>
+                <StringItem index="91" value="+965"/>
+                <StringItem index="92" value="+996"/>
+                <StringItem index="93" value="+856"/>
+                <StringItem index="94" value="+371"/>
+                <StringItem index="95" value="+961"/>
+                <StringItem index="96" value="+266"/>
+                <StringItem index="97" value="+231"/>
+                <StringItem index="98" value="+218"/>
+                <StringItem index="99" value="+423"/>
+                <StringItem index="100" value="+370"/>
+                <StringItem index="101" value="+352"/>
+                <StringItem index="102" value="+261"/>
+                <StringItem index="103" value="+265"/>
+                <StringItem index="104" value="+60"/>
+                <StringItem index="105" value="+960"/>
+                <StringItem index="106" value="+223"/>
+                <StringItem index="107" value="+356"/>
+                <StringItem index="108" value="+692"/>
+                <StringItem index="109" value="+222"/>
+                <StringItem index="110" value="+230"/>
+                <StringItem index="111" value="+52"/>
+                <StringItem index="112" value="+691"/>
+                <StringItem index="113" value="+373"/>
+                <StringItem index="114" value="+377"/>
+                <StringItem index="115" value="+976"/>
+                <StringItem index="116" value="+382"/>
+                <StringItem index="117" value="+212"/>
+                <StringItem index="118" value="+258"/>
+                <StringItem index="119" value="+95"/>
+                <StringItem index="120" value="+264"/>
+                <StringItem index="121" value="+674"/>
+                <StringItem index="122" value="+977"/>
+                <StringItem index="123" value="+31"/>
+                <StringItem index="124" value="+64"/>
+                <StringItem index="125" value="+505"/>
+                <StringItem index="126" value="+227"/>
+                <StringItem index="127" value="+234"/>
+                <StringItem index="128" value="+47"/>
+                <StringItem index="129" value="+968"/>
+                <StringItem index="130" value="+92"/>
+                <StringItem index="131" value="+680"/>
+                <StringItem index="132" value="+507"/>
+                <StringItem index="133" value="+675"/>
+                <StringItem index="134" value="+595"/>
+                <StringItem index="135" value="+51"/>
+                <StringItem index="136" value="+63"/>
+                <StringItem index="137" value="+48"/>
+                <StringItem index="138" value="+351"/>
+                <StringItem index="139" value="+974"/>
+                <StringItem index="140" value="+40"/>
+                <StringItem index="141" value="+7"/>
+                <StringItem index="142" value="+250"/>
+                <StringItem index="143" value="+1-869"/>
+                <StringItem index="144" value="+1-758"/>
+                <StringItem index="145" value="+1-784"/>
+                <StringItem index="146" value="+685"/>
+                <StringItem index="147" value="+378"/>
+                <StringItem index="148" value="+239"/>
+                <StringItem index="149" value="+966"/>
+                <StringItem index="150" value="+221"/>
+                <StringItem index="151" value="+381"/>
+                <StringItem index="152" value="+248"/>
+                <StringItem index="153" value="+232"/>
+                <StringItem index="154" value="+65"/>
+                <StringItem index="155" value="+421"/>
+                <StringItem index="156" value="+386"/>
+                <StringItem index="157" value="+677"/>
+                <StringItem index="158" value="+252"/>
+                <StringItem index="159" value="+27"/>
+                <StringItem index="160" value="+34"/>
+                <StringItem index="161" value="+94"/>
+                <StringItem index="162" value="+249"/>
+                <StringItem index="163" value="+597"/>
+                <StringItem index="164" value="+46"/>
+                <StringItem index="165" value="+41"/>
+                <StringItem index="166" value="+963"/>
+                <StringItem index="167" value="+886"/>
+                <StringItem index="168" value="+992"/>
+                <StringItem index="169" value="+255"/>
+                <StringItem index="170" value="+66"/>
+                <StringItem index="171" value="+228"/>
+                <StringItem index="172" value="+676"/>
+                <StringItem index="173" value="+1-868"/>
+                <StringItem index="174" value="+216"/>
+                <StringItem index="175" value="+90"/>
+                <StringItem index="176" value="+993"/>
+                <StringItem index="177" value="+688"/>
+                <StringItem index="178" value="+256"/>
+                <StringItem index="179" value="+380"/>
+                <StringItem index="180" value="+971"/>
+                <StringItem index="181" value="+44"/>
+                <StringItem index="182" value="+1"/>
+                <StringItem index="183" value="+598"/>
+                <StringItem index="184" value="+998"/>
+                <StringItem index="185" value="+678"/>
+                <StringItem index="186" value="+58"/>
+                <StringItem index="187" value="+84"/>
+                <StringItem index="188" value="+967"/>
+                <StringItem index="189" value="+260"/>
+                <StringItem index="190" value="+263"/>
+              </StringArray>
+            </Property>
+          </Properties>
+          <AuxValues>
+            <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
+          </AuxValues>
+        </Component>
+        <Component class="javax.swing.JTextField" name="direc">
+          <Properties>
+            <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+              <Font name="Segoe UI" size="12" style="1"/>
+            </Property>
+            <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+              <Color blue="99" green="99" red="99" type="rgb"/>
+            </Property>
+            <Property name="text" type="java.lang.String" value="Ej: Av Italia 2222"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JTextField" name="cedu">
+          <Properties>
+            <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+              <Font name="Segoe UI" size="12" style="1"/>
+            </Property>
+            <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+              <Color blue="99" green="99" red="99" type="rgb"/>
+            </Property>
+            <Property name="text" type="java.lang.String" value="11111111 "/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JTextField" name="nombre">
+          <Properties>
+            <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+              <Font name="Segoe UI" size="12" style="1"/>
+            </Property>
+            <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+              <Color blue="99" green="99" red="99" type="rgb"/>
+            </Property>
+            <Property name="text" type="java.lang.String" value="Nombre Apellido"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JButton" name="add">
+          <Properties>
+            <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+              <Font name="Segoe UI" size="12" style="1"/>
+            </Property>
+            <Property name="text" type="java.lang.String" value="Agregar"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="addActionPerformed"/>
+          </Events>
+        </Component>
+      </SubComponents>
+    </Container>
+  </SubComponents>
+</Form>
