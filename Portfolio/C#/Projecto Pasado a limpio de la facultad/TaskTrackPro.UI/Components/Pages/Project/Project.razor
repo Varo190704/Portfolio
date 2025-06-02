@@ -1,0 +1,578 @@
+﻿@page "/project"
+@using System.ComponentModel.DataAnnotations
+@using Domain.Enum
+
+@inject IProjectManager ProjectManager
+@inject ITaskManager TaskManager
+@inject IUserManager UserManager
+@inject IResourceManager ResourceManager
+
+@if (UserManager.getUserByName("admin@sistema.com").login)
+{
+    <PageTitle>Proyectos</PageTitle>
+    <h3>Crear Proyecto</h3>
+        <EditForm Model="@newProject" OnValidSubmit="CreateProject">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label class="form-label">Nombre del Proyecto</label>
+                <InputText class="form-control" @bind-Value="newProject.Name" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Descripción (máx. 400 caracteres)</label>
+                <InputTextArea class="form-control" @bind-Value="newProject.Description" maxlength="400" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Fecha de Inicio Estimada</label>
+                <InputDate class="form-control" @bind-Value="newProject.EstimatedStartDate" />
+            </div>
+            @if (showError2)
+            {
+                <div class="alert alert-danger mb-3" role="alert">
+                    <p><strong>Error:</strong>@messageError2</p>
+                </div>
+            }
+            <button type="submit" class="btn btn-success">Crear Proyecto</button>
+        </EditForm>
+}
+@if (UserManager.getUserByName("admin@sistema.com").login || Users.FirstOrDefault(user => user.Types.Contains(UserType.ProjectAdmin) && user.login) != null)
+{
+@if (Projects.Count()!=0)
+{
+    <br>
+    <br>
+    <br>
+    <h3>Proyectos</h3>
+
+    <div class="list-group mb-4">
+        @foreach (Domain.Utilities.Project p in Projects)
+        {
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <span>@p.Name</span>
+                @if (UserManager.getUserByName("admin@sistema.com").login)
+                {
+                    <button class="btn btn-sm btn-outline-primary" @onclick="() => SelectProject(p)">Seleccionar</button>
+                    <button class="btn btn-sm btn-outline-primary" @onclick="() => DeleteProject(p)">Borrar</button>
+                }
+            </div>
+        }
+    </div> 
+    
+    @if (SelProject!=null && SelectedProject.ContainsKey(SelProject) && SelectedProject[SelProject])
+    {
+        <div class="card mb-4 p-3">
+            <h3>Detalle: @SelProject.Name</h3>
+
+            <div class="card p-3 mb-4">
+                <p><strong>Descripción:</strong> @SelProject.Description</p>
+                <p><strong>Fecha Inicio:</strong> @SelProject.StartDate.ToString("MM-dd-yyyy")</p>
+                <p><strong>Fin Estimado:</strong> @SelProject.StartDate.AddDays(SelProject.Duration).ToString("MM-dd-yyyy")</p>
+            </div>
+
+            <h5>Tareas Críticas</h5>
+            @if (CriticalTasks.Any())
+            {
+                <ul class="list-group mb-3">
+                    @foreach (Task task in CriticalTasks)
+                    {
+                        <li class="list-group-item">
+                            @task.Name (Duración: @task.Duration días)
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p>No hay tareas criticas.</p>
+            }
+
+            <h5>Tareas No Críticas</h5>
+            @if (NonCriticalTasks.Any())
+            {
+                <ul class="list-group">
+                    @foreach (var task in NonCriticalTasks)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            @task.Name
+                            <button class="btn btn-outline-info btn-sm" @onclick="() => SelectTask(task)">
+                                Ver holgura
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p>No hay tareas no críticas.</p>
+            }
+
+            @if (SelectedTask != null)
+            {
+                <div class="alert alert-info mt-3">
+                    <strong>Holgura de “@SelectedTask.Name”:</strong> @SelectedTask.Slak días
+                </div>
+            }
+            
+            <h5>Miembros</h5>
+            @if (SelProject.Members.Any())
+            {
+                <ul class="list-group">
+                    @foreach (User user in SelProject.Members)
+                    {
+                        <li class="list-group-item">@user.Email</li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p>No hay miembros.</p>
+            }
+            <h5>Administrador</h5>
+            @if (SelProject.Admin != null)
+            {
+                <p>@SelProject.Admin.Email</p>
+            }
+            else
+            {
+                <p>No hay administrador.</p>
+            }
+            <h5>Tareas</h5>
+            @if (SelProject.Tasks.Any())
+            {
+                <ul class="list-group">
+                    @foreach (Task task in SelProject.Tasks)
+                    {
+                        <li class="list-group-item">@task.Name</li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p>No hay tareas.</p>
+            }
+            
+            <h5>Tareas a Eliminar</h5>
+            @foreach (Task task in SelProject.Tasks)
+            {
+                <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        @task.Name
+                        <button class="btn btn-outline-info btn-sm" @onclick="() => delTask(task)">
+                            Borrar
+                        </button>
+                    </li>
+                </ul>
+            }
+            @if (Equals(SelProject.Admin, currentUser) || Equals(currentUser, UserManager.getUserByName("admin@sistema.com").login)) 
+            {
+                <EditForm Model="assignTaskUser" OnValidSubmit="AssTaskToUser">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <div class="card mb-4 p-3">
+                        <h5>Asignar Tarea a Usuario</h5>
+                        <div class="row">
+                            <div class="mb-3 col-md-6">
+                                <label class="form-label">Usuario</label>
+                                <InputSelect class="form-select" @bind-Value="assignTaskUser.UserEmail">
+                                    <option value="non">-- elige un Usuario --</option>
+                                    @foreach (User p in SelProject.Members)
+                                    {
+                                        <option value="@p.Email">@p.Email</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="mb-3 col-md-6">
+                                <label class="form-label">Tarea</label>
+                                <InputSelect class="form-select" @bind-Value="assignTaskUser.TaskName">
+                                    <option value="non">-- elige una Tareas --</option>
+                                    @foreach (Task t in SelProject.Tasks)
+                                    {
+                                        <option value="@t.Name">@t.Name</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            Asignar Tarea a Usuario
+                        </button>
+                    </div>
+                </EditForm>
+                <br>
+                <br>
+                <br>       
+
+                <EditForm Model="assign" OnValidSubmit="AssTask">
+                    <DataAnnotationsValidator/>
+                    <ValidationSummary/>
+                    <div class="card mb-4 p-3">
+                        <h5>Asignar Tarea a Proyecto</h5>
+                        <div class="row">
+                            <div class="mb-3 col-md-6">
+                                <label class="form-label">Tarea</label>
+                                <InputSelect class="form-select" @bind-Value="assign.TaskName">
+                                    <option value="non">-- elige una tarea --</option>
+                                    @foreach (Task t in Tasks)
+                                    {
+                                        <option value="@t.Name">@t.Name</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+                        @if (showError)
+                        {
+                            <div class="alert alert-danger mb-3" role="alert">
+                                <p><strong>Error:</strong>@messageError</p>
+                            </div>
+                        }
+                        <button type="submit" class="btn btn-primary">
+                            Asignar Tarea
+                        </button>
+                    </div>
+                </EditForm>
+                <br>
+                <br>
+                <br>
+
+                <EditForm Model="assignUserProject" OnValidSubmit="AssMember">
+                    <DataAnnotationsValidator/>
+                    <ValidationSummary/>
+                    <div class="card mb-4 p-3">
+                        <h5>Asignar Usuario a Proyecto</h5>
+                        <div class="row">
+                            <div class="mb-3 col-md-6">
+                                <label class="form-label">Usuario</label>
+                                <InputSelect class="form-select" @bind-Value="assignUserProject.UserEmail">
+                                    <option value="non">-- elige un Usuario --</option>
+                                    @foreach (User t in Users)
+                                    {
+                                        <option value="@t.Email">@t.Email</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+                        @if (showError3)
+                        {
+                            <div class="alert alert-danger mb-3" role="alert">
+                                <p><strong>Error:</strong>@messageError3</p>
+                            </div>
+                        }
+                        <button type="submit" class="btn btn-primary">
+                            Asignar Miembro
+                        </button>
+                    </div>
+                </EditForm>
+
+                <EditForm Model="assign2" OnValidSubmit="AssResource">
+                    <DataAnnotationsValidator/>
+                    <ValidationSummary/>
+                    <div class="card mb-4 p-3">
+                        <h5>Asignar Recurso a Tarea</h5>
+                        <div class="row">
+                            <div class="mb-3 col-md-6">
+                                <label class="form-label">Recurso</label>
+                                <InputSelect class="form-select" @bind-Value="assign2.ResourceName">
+                                    <option value="non">-- elige un recurso --</option>
+                                    @foreach (Domain.Utilities.Resource r in Resources)
+                                    {
+                                        <option value="@r.Name">@r.Name</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="mb-3 col-md-6">
+                                <label class="form-label">Tarea</label>
+                                <InputSelect class="form-select" @bind-Value="assign2.TaskName">
+                                    <option value="non">-- elige una tarea --</option>
+                                    @foreach (Task t in Tasks)
+                                    {
+                                        <option value="@t.Name">@t.Name</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            Asignar Recurso
+                        </button>
+                        @if (showError)
+                        {
+                            <div class="alert alert-danger mb-3" role="alert">
+                                <p><strong>Error:</strong> Recurso ya fue asignado a esta Tarea</p>
+                            </div>
+                        }
+                    </div>
+                </EditForm>
+            }
+            else
+            {
+                <p>Solo el administrador del projecto o del sistema puede agregar Tareas, Usuarios o Recursos.</p>
+            }
+        </div>
+    }
+    <br>
+    <br>
+    <br>
+    <br>
+    
+    @if (UserManager.getUserByName("admin@sistema.com").login)
+        {
+            <EditForm Model="assignAdminProject" OnValidSubmit="AssAdmin">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <div class="card mb-4 p-3">
+                    <h5>Asignar Administador a Proyecto</h5>
+                    <div class="row">
+                        <div class="mb-3 col-md-6">
+                            <label class="form-label">Proyecto</label>
+                            <InputSelect class="form-select" @bind-Value="assignAdminProject.ProjectName">
+                                <option value="non">-- elige un Projecto --</option>
+                                @foreach (Domain.Utilities.Project p in Projects)
+                                {
+                                    <option value="@p.Name">@p.Name</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="mb-3 col-md-6">
+                            <label class="form-label">Usuario</label>
+                            <InputSelect class="form-select" @bind-Value="assignAdminProject.UserEmail">
+                                <option value="non">-- elige un Usuario --</option>
+                                @foreach (User t in Users)
+                                {
+                                    <option value="@t.Email">@t.Email</option>
+                                }
+                            </InputSelect>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        Asignar Admin
+                    </button>
+                </div>
+            </EditForm>
+            
+            
+        }
+    }
+}
+
+@code {
+    private List<Domain.Utilities.Project> Projects;
+    private List<User> Users;
+    private List<Resource> Resources;
+    private Dictionary<Domain.Utilities.Project, bool>  SelectedProject = new Dictionary<Domain.Utilities.Project, bool>();
+    private List<Task> CriticalTasks = new List<Task>();
+    private List<Task> NonCriticalTasks = new List<Task>();
+    private Task SelectedTask;
+    private Domain.Utilities.Project SelProject;
+    private List<Task> Tasks;
+    private NewAssignModel assign = new NewAssignModel();
+    private NewAssign4Model assignTaskUser = new NewAssign4Model();
+    private NewAssign2Model assignUserProject = new NewAssign2Model();
+    private NewAssign3Model assignAdminProject = new NewAssign3Model();
+    private ProjectViewModel newProject = new();
+    private bool showError = false;
+    private string messageError = "";
+    private bool showError2 = false;
+    private string messageError2 = "";
+    private bool showError3 = false;
+    private string messageError3 = "";
+    private User currentUser;
+    private NewAssign5Model assign2 = new NewAssign5Model();
+
+    protected override void OnInitialized()
+    {
+        Projects = ProjectManager.getAllProjects().ToList();
+        Tasks = TaskManager.getAllTasks().ToList();
+        Users = UserManager.getAllUsers().ToList();
+        currentUser = Users.FirstOrDefault(u => u.login);
+        assign2 = new NewAssign5Model();
+    }
+    
+    private void SelectProject(Domain.Utilities.Project proj)
+    {
+        if (SelectedProject.ContainsKey(proj) && SelectedProject[proj])
+        {
+            SelectedProject[proj] = false;
+        }
+        else
+        {
+            SelectedProject.Clear();
+            SelectedProject[proj] = true;
+            SelProject = proj;
+            CriticalTasks = SelProject.getCriticalPath();
+            NonCriticalTasks = SelProject.Tasks.Where(t => t.Slak > 0).ToList();
+            SelectedTask = null;
+        }
+    }
+    
+    private void DeleteProject(Domain.Utilities.Project project)
+    {
+        ProjectManager.deleteProject(project);
+        Projects = ProjectManager.getAllProjects().ToList();
+    }
+    
+    private void SelectTask(Task t)
+    {
+        SelectedTask = t;
+    }
+
+    private void CreateProject()
+    {
+        string name = newProject.Name;
+        string desc = newProject.Description;
+        DateOnly start = newProject.EstimatedStartDate;
+        if (!Equals(ProjectManager.getProjectsByName(name), null))
+        {
+            showError2 = true;
+            messageError2 = "Ya existe un proyecto creado bajo ese nombre";
+        }
+        else
+        {
+            Domain.Utilities.Project project = new Domain.Utilities.Project(name, desc, start);
+            ProjectManager.createProject(project);
+        }
+        Projects = ProjectManager.getAllProjects().ToList();
+        newProject = new ProjectViewModel();
+    }
+        
+    private void AssTask()
+    {
+        Task task = TaskManager.getTasksByName(assign.TaskName);
+        if (SelProject.Tasks.Contains(task))
+        {
+            showError = true;
+            messageError = "Tarea ya se agrego con anterioridad";
+        }
+        else
+        {
+            ProjectManager.assTask(SelProject, task);
+            Projects = ProjectManager.getAllProjects().ToList();
+            assign = new NewAssignModel();   
+        }
+    }
+    
+    private void AssTaskToUser()
+    {
+        Domain.Utilities.Project project = SelProject;
+        User user = UserManager.getUserByName(assignTaskUser.UserEmail);
+        Task task = TaskManager.getTasksByName(assignTaskUser.TaskName);
+        ProjectManager.assTaskToMember(SelProject, SelProject.Admin, user, task);
+        Projects = ProjectManager.getAllProjects().ToList();
+        assignTaskUser = new NewAssign4Model();
+    }
+    
+    private void AssMember()
+    {
+        User u = UserManager.getUserByName(assignUserProject.UserEmail);
+        if (SelProject.Members.Contains(u))
+        {
+            showError3 = true;
+            messageError3 = "Usuario ya se agrego con anterioridad";
+        }
+        else
+        {
+            ProjectManager.assignMember(SelProject, u);
+            Projects = ProjectManager.getAllProjects().ToList();
+            assignUserProject = new NewAssign2Model();   
+        }
+    }
+    
+    private void AssAdmin()
+    {
+        Domain.Utilities.Project project = ProjectManager.getProjectsByName(assignAdminProject.ProjectName);
+        User u = UserManager.getUserByName(assignAdminProject.UserEmail);
+        if (!project.Members.Contains(u))
+        {
+            ProjectManager.assignMember(project, u);
+        }
+        project.Admin = u;
+        Projects = ProjectManager.getAllProjects().ToList();
+        assignAdminProject = new NewAssign3Model();
+        
+    }
+    
+    private void AssResource()
+    {
+        Resource resource = ResourceManager.getResourcesByName(assign2.ResourceName);
+        Task task = TaskManager.getTasksByName(assign2.TaskName);
+        if (task.Resources.Contains(resource))
+        {
+            showError = true;
+        }
+        else
+        {
+            TaskManager.AssResource(task, resource);
+        }
+        Resources = ResourceManager.getAllResources().ToList();
+        Tasks = TaskManager.getAllTasks().ToList();
+        ProjectManager.AlwaysUpdateTasks(Tasks,Projects);
+        Projects = ProjectManager.getAllProjects().ToList();
+        assign = new NewAssignModel();    
+    }
+    
+    public class ProjectViewModel
+    {
+        [Required(ErrorMessage = "El nombre es obligatorio.")]
+        public string Name { get; set; }
+
+        [Required(ErrorMessage = "La descripción es obligatoria.")]
+        [MaxLength(400, ErrorMessage = "La descripción no puede superar los 400 caracteres.")]
+        public string Description { get; set; }
+
+        [Required(ErrorMessage = "La fecha de inicio es obligatoria.")]
+        public DateOnly EstimatedStartDate { get; set; }
+    }
+
+    public class NewAssignModel
+    {
+        [Required(ErrorMessage = "Selecciona un tipo.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string TaskName { get; set; }
+    }
+    
+    public class NewAssign2Model
+    {
+        [Required(ErrorMessage = "Selecciona un tipo.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string UserEmail { get; set; }
+    }
+    
+    public class NewAssign3Model
+    {
+        [Required(ErrorMessage = "Selecciona un tipo.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string ProjectName { get; set; }
+
+        [Required(ErrorMessage = "Selecciona un tipo.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string UserEmail { get; set; }
+    }
+    
+    public class NewAssign4Model
+    {
+        [Required(ErrorMessage = "Selecciona un tipo.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string UserEmail { get; set; }
+
+        [Required(ErrorMessage = "Selecciona un tipo.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string TaskName { get; set; }
+    }
+
+    public class NewAssign5Model
+    {
+        [Required(ErrorMessage = "Selecciona un tipo.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string ResourceName { get; set; }
+
+        [Required(ErrorMessage = "Selecciona un tipo.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string TaskName { get; set; }
+    }
+
+    private void delTask(Task task)
+    {
+        ProjectManager.deleteTask(SelProject, task);
+        Projects = ProjectManager.getAllProjects().ToList();
+    }
+}

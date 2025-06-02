@@ -1,0 +1,169 @@
+﻿@page "/create"
+@using System.ComponentModel.DataAnnotations
+
+@inject IUserManager UserManager
+@if (UserManager.getUserByName("admin@sistema.com").login)
+{
+    <PageTitle>Creación de Usuario</PageTitle>
+    <h3>Creación de Usuario</h3>
+
+    <EditForm Model="@newUser" OnValidSubmit="CreateUsers">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="row">
+            <div class="mb-3 col-md-6">
+                <label class="form-label">Nombre</label>
+                <InputText class="form-control" @bind-Value="newUser.Name" />
+            </div>
+
+            <div class="mb-3 col-md-6">
+                <label class="form-label">Apellido</label>
+                <InputText class="form-control" @bind-Value="newUser.Surname" />
+            </div>
+
+            <div class="mb-3 col-md-6">
+                <label class="form-label">Email</label>
+                <InputText class="form-control" @bind-Value="newUser.Email" />
+            </div>
+
+            <div class="mb-3 col-md-6">
+                <label class="form-label">Fecha de Nacimiento</label>
+                <InputDate class="form-control" @bind-Value="newUser.BirthDate" />
+            </div>
+
+            <div class="mb-3 col-md-6">
+                <label class="form-label">Contraseña</label>
+                <InputText class="form-control" @bind-Value="newUser.Password" />
+            </div>
+            @if (showError)
+            {
+                <div class="alert alert-danger mb-3" role="alert">
+                    <p><strong>Error:</strong> @messageError</p>
+                </div>
+            }
+        </div>
+        
+        <div class="mb-3">
+            <button type="submit" class="btn btn-success">Crear Usuario</button>
+        </div>
+    </EditForm>
+    @if (Users.Count > 0)
+    {
+        <div class="card p-3">
+            <h5>Usuarios Existentes</h5>
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Fecha de Nacimiento</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (User user in Users)
+                {
+                    if (user.AdminSistem)
+                    {
+                        <tr>
+                            <td>@user.Name</td>
+                            <td>@user.Surname</td>
+                            <td>@user.BirthDate</td>
+                        </tr>    
+                    }
+                    else
+                    {
+                        <tr>
+                            <td>@user.Name</td>
+                            <td>@user.Surname</td>
+                            <td>@user.BirthDate</td>
+                            <td><button class="btn btn-sm btn-primary w-100" @onclick="() => DelUser(user)">Borrar</button></td>
+                        </tr>    
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+@code
+{
+    private List<User> Users;
+    private UserViewModel newUser = new UserViewModel();
+    private bool showError = false;
+    private string messageError = "";
+
+    protected override void OnInitialized()
+    {
+        Users = UserManager.getAllUsers().ToList();
+    }
+
+    public void DelUser(User user)
+    {
+        UserManager.deleteUser(user);
+        Users = UserManager.getAllUsers().ToList();
+    }
+    
+    private void CreateUsers()
+    {
+        if(!Domain.Validators.Validator.validPassword(newUser.Password))
+        {
+            showError = true;
+            messageError = "La contraseña es invalida. (Debe contener: Mayuscula, Minuscula, Simbolo Singular y Numero)";
+        }
+        else if(!Domain.Validators.Validator.validEmail(newUser.Email))
+        {
+            showError = true;
+            messageError = "El email es invalido.";
+        }
+        else
+        {
+            string name = newUser.Name;
+            string surname = newUser.Surname;
+            string email = newUser.Email;
+            DateOnly birthDate = newUser.BirthDate;
+            string pass = newUser.Password;
+            if (!Equals(UserManager.getUserByName(email), null))
+            {
+                showError = true;
+                messageError = "Ya existe un Usuario creado bajo ese email";
+            }
+            else
+            {
+                User user = new User(name, surname, email, pass, birthDate);
+                UserManager.createUser(user);    
+            }
+        }
+        Users = UserManager.getAllUsers().ToList();
+        newUser = new UserViewModel();
+    }
+    
+    public class UserViewModel
+    {
+        [Required(ErrorMessage = "El nombre es obligatorio.")]
+        public string Name { get; set; }
+
+        [Required(ErrorMessage = "El apellido es obligatorio.")]
+        public string Surname { get; set; }
+
+        [Required(ErrorMessage = "El email es obligatorio.")]
+        public string Email { get; set; }
+        
+        [Required(ErrorMessage = "La fecha de nacimiento es obligatoria.")]
+        [Range(typeof(DateOnly), "1925-01-01", "2007-05-15", ErrorMessage = "La fecha no puede ser posterior al 15/05/2007 ni inferior a 01/01/1925.")]
+        public DateOnly BirthDate { get; set; }
+        
+        public IEnumerable<ValidationResult> Validate(ValidationContext context)
+        {
+            DateOnly max = new DateOnly(2007, 5, 15);
+            DateOnly min = new DateOnly(1925, 01, 01);
+            if (BirthDate < max && BirthDate > min)
+                yield return new ValidationResult(
+                    "La fecha no puede ser posterior al 15/05/2007 ni inferior a 01/01/1925.",
+                    new[] { nameof(BirthDate) }
+                );
+        }
+        
+        [Required(ErrorMessage = "La contraseña es obligatoria.")]
+        public string Password { get; set; }
+    }
+}

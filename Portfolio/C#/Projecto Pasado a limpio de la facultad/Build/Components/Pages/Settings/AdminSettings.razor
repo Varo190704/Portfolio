@@ -1,0 +1,573 @@
+﻿@inject IUserManager UserManager
+@inject ITaskManager     TaskManager
+@inject IResourceManager     ResourceManager
+@inject IProjectManager     ProjectManager
+@inject IAlertManager     AlertManager
+
+@page "/settings"
+@using System.ComponentModel.DataAnnotations
+@using Domain.Aplication.Services
+@using Domain.Enum
+<PageTitle>Configuraciones</PageTitle>
+<h3>Ajustes del Sistema</h3>
+
+@if (UserManager.getUserByName("admin@sistema.com").login)
+{
+    <div class="card p-3 mt-4">
+        <h5>Usuarios registrados</h5>
+        <table class="table table-bordered table-striped mt-3">
+            <thead class="table-light">
+            <tr>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>Email</th>
+                <th>Fecha de nacimiento</th>
+                <th>Administrador</th>
+                <th>Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (User user in Users)
+            {
+                <tr>
+                    <td>@user.Name</td>
+                    <td>@user.Surname</td>
+                    <td>@user.Email</td>
+                    <td>@user.BirthDate</td>
+                    <td>
+                        @if (user.AdminSistem)
+                        {
+                            <p>Si</p>
+                        }
+                        else
+                        {
+                            <p>No</p>
+                        }
+                    </td>
+                    @if(!user.AdminSistem)
+                    {
+                        <td><button class="btn btn-sm btn-primary w-100" @onclick="() => Update(user)">Editar</button></td>
+                    }
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+        
+    @if (SelUser!=null && SelectedUser.ContainsKey(SelUser) && SelectedUser[SelUser])
+    {
+        <EditForm Model="newUser" OnValidSubmit="UpdateUser">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <div class="card p-3 mb-4">
+                <h5>Editar Usuario</h5>
+
+                <div class="row">
+                    <div class="mb-3 col-md-6">
+                        <label class="form-label">Nombre</label>
+                        <InputText class="form-control" @bind-Value="newUser.Name"/>
+                    </div>
+
+                    <div class="mb-3 col-md-4">
+                        <label class="form-label">Apellido</label>
+                        <InputText class="form-control" @bind-Value="newUser.Surname"/>
+                    </div>
+
+                    <div class="mb-3 col-md-4">
+                        <label class="form-label">Fecha de cumpleaños</label>
+                        <InputDate class="form-control" @bind-Value="newUser.BirthDate" />
+                    </div>
+
+                    <div class="mb-3 col-md-4">
+                        <label class="form-label">Contraseña</label>
+                        <InputText class="form-control" @bind-Value="newUser.Password" />
+                    </div>
+                </div>
+                @if (showError)
+                {
+                    <div class="alert alert-danger mb-3" role="alert">
+                        <p><strong>Error:</strong>Contraseña no es valida</p>
+                    </div>
+                }
+                <button type="submit" class="btn btn-success">Actualizar Usuario</button>
+            </div>
+        </EditForm>
+    }
+
+    <div class="card p-3 mt-4">
+        <h5>Alerts en Sistema</h5>
+        <table class="table table-bordered table-striped mt-3">
+            <thead class="table-light">
+            <tr>
+                <th>Id</th>
+                <th>Mensaje</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (Alert t in Alerts)
+            {
+                <tr>
+                    <td>@t.Id</td>
+                    <td>@t.Message</td>
+                    <td><button class="btn btn-sm btn-primary w-100" @onclick="() => Update(t)">Editar</button></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+
+    @if (SelAlert!=null && SelectedAlert.ContainsKey(SelAlert) && SelectedAlert[SelAlert])
+    {
+        <EditForm Model="newAlert" OnValidSubmit="UpdateAlert">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <div class="card p-3 mb-4">
+                <h5>Editar Alert</h5>
+                <div class="mb-3 col-md-6">
+                    <label class="form-label">Mensaje</label>
+                    <InputText class="form-control" @bind-Value="newResource.Description"/>
+                </div>
+                <button type="submit" class="btn btn-success">Actualizar Alerta</button>
+            </div>
+        </EditForm>
+    }
+}
+
+@if (UserManager.getUserByName("admin@sistema.com").login || Users.FirstOrDefault(user => user.Types.Contains(UserType.ProjectAdmin) && user.login) != null)
+{
+    <div class="card p-3 mt-4">
+        <h5>Projectos en Sistema</h5>
+        <table class="table table-bordered table-striped mt-3">
+            <thead class="table-light">
+            <tr>
+                <th>Titulo</th>
+                <th>Description</th>
+                <th>Duration</th>
+                <th>Fecha de inicio</th>
+                <th>Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (Project t in Projects)
+            {
+                <tr>
+                    <td>@t.Name</td>
+                    <td>@t.Description</td>
+                    <td>@t.Duration</td>
+                    <td>@t.StartDate</td>
+                    <td><button class="btn btn-sm btn-primary w-100" @onclick="() => Update(t)">Editar</button></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    @if (SelProject!=null && SelectedProject.ContainsKey(SelProject) && SelectedProject[SelProject])
+    {
+        <EditForm Model="newProject" OnValidSubmit="UpdateProject">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <div class="card p-3 mb-4">
+                <h5>Editar Tarea</h5>
+
+                <div class="row">
+                    <div class="mb-3 col-md-6">
+                        <label class="form-label">Descripción</label>
+                        <InputText class="form-control" @bind-Value="newProject.Description"/>
+                    </div>
+
+                    <div class="mb-3 col-md-4">
+                        <label class="form-label">Fecha de inicio estimada</label>
+                        <InputDate class="form-control" @bind-Value="newProject.EstimatedStartDate"/>
+                    </div>
+
+                </div>
+                <button type="submit" class="btn btn-success">Actualizar Proyecto</button>
+            </div>
+        </EditForm>
+    }
+
+
+    <div class="card p-3 mt-4">
+        <h5>Recursos en Sistema</h5>
+        <table class="table table-bordered table-striped mt-3">
+            <thead class="table-light">
+            <tr>
+                <th>Nombre</th>
+                <th>Description</th>
+                <th>Type</th>
+                <th>Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (Resource t in Resources)
+            {
+                <tr>
+                    <td>@t.Name</td>
+                    <td>@t.Description</td>
+                    <td>@t.TaskType</td>
+                    <td><button class="btn btn-sm btn-primary w-100" @onclick="() => Update(t)">Editar</button></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    @if (SelResource!=null && SelectedResource.ContainsKey(SelResource) && SelectedResource[SelResource])
+    {
+        <EditForm Model="newResource" OnValidSubmit="UpdateResource">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <div class="card p-3 mb-4">
+                <h5>Editar Recurso</h5>
+
+                <div class="row">
+                    <div class="mb-3 col-md-4">
+                        <label class="form-label">Estado</label>
+                        <InputSelect class="form-select" @bind-Value="newResource.Type">
+                            <option value="non">Seleccione una opción</option>
+                            <option value="Pendiente">Humano</option>
+                            <option value="Progreso">Tecnologico</option>
+                            <option value="Completada">Software</option>
+                        </InputSelect>
+                    </div>
+                    
+                    <div class="mb-3 col-md-6">
+                        <label class="form-label">Descripción</label>
+                        <InputText class="form-control" @bind-Value="newResource.Description"/>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success">Actualizar Recurso</button>
+            </div>
+        </EditForm>
+    }
+
+}
+
+<div class="card p-3 mt-4">
+    <h5>Tareas en Sistema</h5>
+    <table class="table table-bordered table-striped mt-3">
+        <thead class="table-light">
+        <tr>
+            <th>Titulo</th>
+            <th>Description</th>
+            <th>Duration</th>
+            <th>Fecha de inicio</th>
+            <th>Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (Task t in Tasks)
+        {
+            <tr>
+                <td>@t.Name</td>
+                <td>@t.Description</td>
+                <td>@t.Duration</td>
+                <td>@t.StartDate</td>
+                <td><button class="btn btn-sm btn-primary w-100" @onclick="() => Update(t)">Editar</button></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+@if (SelTask!=null && SelectedTask.ContainsKey(SelTask) && SelectedTask[SelTask])
+{
+    <EditForm Model="newTask" OnValidSubmit="UpdateTask">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="card p-3 mb-4">
+            <h5>Editar Tarea</h5>
+
+            <div class="row">
+                <div class="mb-3 col-md-6">
+                    <label class="form-label">Descripción</label>
+                    <InputText class="form-control" @bind-Value="newTask.TaskDescription"/>
+                </div>
+
+                <div class="mb-3 col-md-4">
+                    <label class="form-label">Fecha de inicio estimada</label>
+                    <InputDate class="form-control" @bind-Value="newTask.TaskDate"/>
+                </div>
+
+                <div class="mb-3 col-md-4">
+                    <label class="form-label">Duración (días)</label>
+                    <InputNumber class="form-control" @bind-Value="newTask.TaskDuration"/>
+                </div>
+
+                <div class="mb-3 col-md-4">
+                    <label class="form-label">Estado</label>
+                    <InputSelect class="form-select" @bind-Value="newTask.TaskProgress">
+                        <option value="non">Seleccione una opción</option>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Progreso">En progreso</option>
+                        <option value="Completada">Completada</option>
+                    </InputSelect>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success">Actualizar Tarea</button>
+        </div>
+    </EditForm>
+}
+
+
+@code
+{
+    private List<User> Users;
+    private List<Alert> Alerts;
+    private List<Task> Tasks;
+    private List<Project> Projects;
+    private List<Resource> Resources;
+    private Task SelTask;
+    private Dictionary<Task, bool>  SelectedTask = new Dictionary<Task, bool>();
+    private User SelUser;
+    private Dictionary<User, bool>  SelectedUser = new Dictionary<User, bool>();
+    private Resource SelResource;
+    private Dictionary<Resource, bool>  SelectedResource = new Dictionary<Resource, bool>();
+    private Alert SelAlert;
+    private Dictionary<Project, bool>  SelectedProject = new Dictionary<Project, bool>();
+    private Project SelProject;
+    private Dictionary<Alert, bool>  SelectedAlert = new Dictionary<Alert, bool>();
+    private NewTaskModel newTask = new NewTaskModel();
+    private NewResourceModel newResource = new NewResourceModel();
+    private UserViewModel newUser = new UserViewModel();
+    private AlertViewModel newAlert = new AlertViewModel();
+    private ProjectViewModel newProject = new ProjectViewModel();
+    private bool showError = false;
+    
+    protected override void OnInitialized()
+    {
+        Users = UserManager.getAllUsers().ToList();
+        Tasks = TaskManager.getAllTasks().ToList();
+        Resources = ResourceManager.getAllResources().ToList();
+        Alerts = AlertManager.getAllAlerts().ToList();
+        Projects = ProjectManager.getAllProjects().ToList();
+    }
+
+    public void Update(Task t)
+    {
+        if (SelectedTask.ContainsKey(t) && SelectedTask[t])
+        {
+            SelectedTask[t] = false;
+        }
+        else
+        {
+            SelectedTask.Clear();
+            SelectedTask[t] = true;
+            SelTask = t;
+        }
+    }
+    
+    public void Update(Alert t)
+    {
+        if (SelectedAlert.ContainsKey(t) && SelectedAlert[t])
+        {
+            SelectedAlert[t] = false;
+        }
+        else
+        {
+            SelectedAlert.Clear();
+            SelectedAlert[t] = true;
+            SelAlert = t;
+        }
+    }
+    
+    public void Update(Project t)
+    {
+        if (SelectedProject.ContainsKey(t) && SelectedProject[t])
+        {
+            SelectedProject[t] = false;
+        }
+        else
+        {
+            SelectedProject.Clear();
+            SelectedProject[t] = true;
+            SelProject = t;
+        }
+    }
+    
+    public void Update(Resource r)
+    {
+        if (SelectedResource.ContainsKey(r) && SelectedResource[r])
+        {
+            SelectedResource[r] = false;
+        }
+        else
+        {
+            SelectedResource.Clear();
+            SelectedResource[r] = true;
+            SelResource = r;
+        }
+    }
+    
+    public void Update(User u)
+    {
+        if (SelectedUser.ContainsKey(u) && SelectedUser[u])
+        {
+            SelectedUser[u] = false;
+        }
+        else
+        {   
+            SelectedUser.Clear();
+            SelectedUser[u] = true;
+            SelUser = u;
+        }
+    }
+
+    public void UpdateTask()
+    {
+        SelectedTask[SelTask] = false;
+        SelTask.Description = newTask.TaskDescription;
+        SelTask.Duration = newTask.TaskDuration;
+        SelTask.Status = TaskProgress.Completed;
+        if (Equals(newTask.TaskProgress, "Pendiente"))
+        {
+            SelTask.Status = TaskProgress.Pending;
+        }
+
+        if (Equals(newTask.TaskProgress, "Progreso"))
+        {
+            SelTask.Status = TaskProgress.InProgress;
+        }
+        TaskManager.updateTask(SelTask);
+        Tasks = TaskManager.getAllTasks().ToList();
+        ProjectManager.AlwaysUpdateTasks(Tasks,Projects);
+        Projects = ProjectManager.getAllProjects().ToList();
+        SelTask = null;
+    }
+    
+    public void UpdateAlert()
+    {
+        SelectedAlert[SelAlert] = false;
+        SelAlert.Message = newAlert.Mess;
+        AlertManager.updateAlert(SelAlert);
+        Alerts = AlertManager.getAllAlerts().ToList();
+        SelAlert = null;
+    }
+    
+    public void UpdateProject()
+    {
+        SelectedProject[SelProject] = false;
+        SelProject.Description = newProject.Description;
+        SelProject.StartDate = newProject.EstimatedStartDate;
+        ProjectManager.updateProject(SelProject);
+        Projects = ProjectManager.getAllProjects().ToList();
+        SelProject = null;
+    }
+    
+    public void UpdateResource()
+    {
+        SelResource.Description = newResource.Description;
+        SelResource.TaskType = TaskType.Software;
+        if (Equals(newResource.Type, "Pendiente"))
+        {
+            SelResource.TaskType = TaskType.Human;
+        }
+
+        if (Equals(newTask.TaskProgress, "Progreso"))
+        {
+            SelResource.TaskType = TaskType.Infrastructure;
+        }
+        ResourceManager.updateResource(SelResource);
+        Resources = ResourceManager.getAllResources().ToList();
+        TaskManager.AlwaysUpdateTasks(Resources, Tasks);
+        Tasks = TaskManager.getAllTasks().ToList();
+        SelResource = null;
+    }
+    
+    public void UpdateUser()
+    {
+        if (Domain.Validators.Validator.validPassword(newUser.Password))
+        {
+            SelectedUser[SelUser] = false;
+            SelUser.BirthDate = newUser.BirthDate;
+            SelUser.Name = newUser.Name;
+            SelUser.Surname = newUser.Surname;
+            SelUser.Password = newUser.Password;    
+            UserManager.updateUser(SelUser);
+            Users = UserManager.getAllUsers().ToList();
+            ProjectManager.AlwaysUpdateUsers(Users, Projects);
+            Projects = ProjectManager.getAllProjects().ToList();
+            SelUser = null;
+        }
+        else
+        {
+            showError = true;
+        }
+        
+        
+    }
+    
+    public class ProjectViewModel
+    {
+        [Required(ErrorMessage = "La descripción es obligatoria.")]
+        [MaxLength(400, ErrorMessage = "La descripción no puede superar los 400 caracteres.")]
+        public string Description { get; set; }
+
+        [Required(ErrorMessage = "La fecha de inicio es obligatoria.")]
+        public DateOnly EstimatedStartDate { get; set; }
+    }
+    
+    private class NewTaskModel
+    {
+
+        [Required(ErrorMessage = "La Descripción es obligatoria.")]
+        public string TaskDescription { get; set; }
+        
+        [Required(ErrorMessage = "La Fecha de Inicio es obligatorio.")]
+        public DateOnly TaskDate { get; set; }
+        
+        [Required(ErrorMessage = "La Duración es obligatoria.")]
+        [Range(1, int.MaxValue, ErrorMessage = "La duración debe ser igual o mayor a 1.")]
+        public int TaskDuration { get; set; }
+
+        [Required(ErrorMessage = "El progreso es obligatorio.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string TaskProgress { get; set; }
+    }
+    
+    private class NewResourceModel
+    {
+
+        [Required(ErrorMessage = "La Descripción es obligatoria.")]
+        public string Description { get; set; }
+        
+        [Required(ErrorMessage = "El progreso es obligatorio.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string Type { get; set; }
+    }
+
+    private class AlertViewModel
+    {
+
+        [Required(ErrorMessage = "El mensaje es obligatorio.")]
+        public string Mess { get; set; }
+    }
+    public class UserViewModel
+    {
+        [Required(ErrorMessage = "El nombre es obligatorio.")]
+        public string Name { get; set; }
+
+        [Required(ErrorMessage = "El apellido es obligatorio.")]
+        public string Surname { get; set; }
+
+        [Required(ErrorMessage = "La fecha de nacimiento es obligatoria.")]
+        [Range(typeof(DateOnly), "1925-01-01", "2007-05-15", ErrorMessage = "La fecha no puede ser posterior al 15/05/2007 ni inferior a 01/01/1925.")]
+        public DateOnly BirthDate { get; set; }
+        
+        public IEnumerable<ValidationResult> Validate(ValidationContext context)
+        {
+            DateOnly max = new DateOnly(2007, 5, 15);
+            DateOnly min = new DateOnly(1925, 01, 01);
+            if (BirthDate < max && BirthDate > min)
+                yield return new ValidationResult(
+                    "La fecha no puede ser posterior al 15/05/2007 ni inferior a 01/01/1925.",
+                    new[] { nameof(BirthDate) }
+                );
+        }
+        
+        [Required(ErrorMessage = "La contraseña es obligatoria.")]
+        public string Password { get; set; }
+    }
+}

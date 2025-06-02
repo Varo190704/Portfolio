@@ -1,0 +1,291 @@
+﻿@page "/task"
+@using System.ComponentModel.DataAnnotations
+@using Domain.Aplication.Services
+@using Domain.Enum
+
+@inject ITaskManager     TaskManager
+@inject IUserManager     UserManager
+@inject IProjectManager     ProjectManager
+@inject IResourceManager     ResourceManager
+
+<PageTitle>Gestión de Tareas</PageTitle>
+<h3>Gestión de Tareas</h3>
+@if (UserManager.getUserByName("admin@sistema.com").login || Users.FirstOrDefault(user => user.Types.Contains(UserType.ProjectAdmin) && user.login) != null)
+{
+    @if (Tasks == null)
+    {
+        <p>Cargando datos…</p>
+    }
+    else
+    {
+        <EditForm Model="newTask" OnValidSubmit="createTask">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <div class="card p-3 mb-4">
+                <h5>Nueva Tarea</h5>
+
+                <div class="row">
+                    <div class="mb-3 col-md-6">
+                        <label class="form-label">Título</label>
+                        <InputText class="form-control" @bind-Value="newTask.TaskName" />
+                    </div>
+
+                    <div class="mb-3 col-md-6">
+                        <label class="form-label">Descripción</label>
+                        <InputText class="form-control" @bind-Value="newTask.TaskDescription"/>
+                    </div>
+
+                    <div class="mb-3 col-md-4">
+                        <label class="form-label">Fecha de inicio estimada</label>
+                        <InputDate class="form-control" @bind-Value="newTask.TaskDate"/>
+                    </div>
+
+                    <div class="mb-3 col-md-4">
+                        <label class="form-label">Duración (días)</label>
+                        <InputNumber class="form-control" @bind-Value="newTask.TaskDuration"/>
+                    </div>
+
+                    <div class="mb-3 col-md-4">
+                        <label class="form-label">Estado</label>
+                        <InputSelect class="form-select" @bind-Value="newTask.TaskProgress">
+                            <option value="non">Seleccione una opción</option>
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="Progreso">En progreso</option>
+                            <option value="Completada">Completada</option>
+                        </InputSelect>
+                    </div>
+
+                    <div class="mb-3 col-md-6">
+                        <label class="form-label">Dependencias (otras tareas)</label>
+                        @foreach (Domain.Utilities.Task t in Tasks)
+                        {
+                            <div>
+                                <input type="checkbox" checked="@isSelect.Contains(t.Name)" @onchange="e => OnDependencyChanged(e, t.Name)" />
+                                <label>@t.Name</label>
+                            </div>
+                        }
+                        <small class="form-text text-muted">Marca todas las tareas de las que dependa esta nueva.</small>]
+                    </div>
+                </div>
+                @if (showError)
+                {
+                    <div class="alert alert-danger mb-3" role="alert">
+                        <p><strong>Error:</strong>@messageError</p>
+                    </div>
+                }
+                <button type="submit" class="btn btn-success">Agregar Tarea</button>
+            </div>
+        </EditForm>
+    }
+}
+<div class="card p-3">
+        <h5>Tareas Existentes</h5>
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>Título</th>
+                <th>Descripción</th>
+                <th>Duración</th>
+                <th>Estado</th>
+                <th>Fecha Ejecución</th>
+                <th>Dependencias</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (Domain.Utilities.Task task in Tasks)
+            {
+                <tr>
+                    <td>@task.Name</td>
+                    <td>@task.Description</td>
+                    <td>@task.Duration</td>
+                    <td>@task.Status</td>
+                    <td>@task.StartDate</td>
+                    <td>
+                        @foreach (Domain.Utilities.Task depend in task.Dependencies)
+                        {
+                            <span>@depend.Name,</span>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+
+@if (Tasks.Count() != 0)
+{
+    <br>
+    <br>
+    <br>
+    <h3>Tareas</h3>
+
+    <div class="list-group mb-4">
+        @foreach (Domain.Utilities.Task task in Tasks)
+        {
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <span>@task.Name</span>
+                <button class="btn btn-sm btn-outline-primary" @onclick="() => SelectTask(task)">Seleccionar</button>
+                <button class="btn btn-sm btn-outline-primary" @onclick="() => DelTask(task)">Borrar</button>
+            </div>
+        }
+    </div> 
+    <br>
+    @if (SelTask!=null && SelectedTask.ContainsKey(SelTask) && SelectedTask[SelTask])
+    {
+        <h5>Recursos asignados a: @SelTask.Name</h5>
+
+        <div class="card p-3 mb-4">
+            @foreach (Resource resource in SelTask.Resources)
+            {
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>@resource.Name</span>
+                    <button class="btn btn-sm btn-outline-primary" @onclick="() => DelResource(SelTask,resource)">Borrar</button>
+                </div>
+            }
+        </div>
+        <br>
+        <br>
+        
+        <h5>Dependencias de: @SelTask.Name</h5>
+        
+        <div class="card p-3 mb-4">
+            @foreach (Domain.Utilities.Task t in SelTask.Dependencies)
+            {
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>@t.Name</span>
+                    <button class="btn btn-sm btn-outline-primary" @onclick="() => DelDepend(SelTask, t)">Borrar</button>
+                </div>
+            }
+        </div>
+
+    }
+}
+@code{
+
+    private List<Domain.Utilities.Task> Tasks;
+    private List<Project> Projects;
+    private List<User> Users;
+    private NewTaskModel newTask = new NewTaskModel();
+    private List<string> isSelect = new();
+    private bool showError = false;
+    private string messageError = "";
+    private Dictionary<Domain.Utilities.Task, bool>  SelectedTask = new Dictionary<Domain.Utilities.Task, bool>();
+    private Domain.Utilities.Task SelTask;
+    
+    protected override void OnInitialized()
+    {
+        Tasks = TaskManager.getAllTasks().ToList();
+        Users = UserManager.getAllUsers().ToList();
+        Projects = ProjectManager.getAllProjects().ToList();
+    }
+    
+    private void SelectTask(Domain.Utilities.Task task)
+    {
+        if (SelectedTask.ContainsKey(task) && SelectedTask[task])
+        {
+            SelectedTask[task] = false;
+        }
+        else
+        {
+            SelectedTask.Clear();
+            SelectedTask[task] = true;
+            SelTask = task;
+        }
+    }
+    
+    private void DelTask(Domain.Utilities.Task task)
+    {
+        TaskManager.deleteTask(task);
+        Tasks = TaskManager.getAllTasks().ToList();
+        ProjectManager.AlwaysUpdateTasks(Tasks,Projects);
+        Projects = ProjectManager.getAllProjects().ToList();
+    }
+    
+    private void DelResource(Domain.Utilities.Task task, Resource resource)
+    {
+        TaskManager.DeleteResource(task, resource);
+        Tasks = TaskManager.getAllTasks().ToList();
+        ProjectManager.AlwaysUpdateTasks(Tasks,Projects);
+        Projects = ProjectManager.getAllProjects().ToList();
+    }
+
+    public void DelDepend(Domain.Utilities.Task main, Domain.Utilities.Task task)
+    {
+        TaskManager.RemoveDependency(main,task);
+        Tasks = TaskManager.getAllTasks().ToList();
+        ProjectManager.AlwaysUpdateTasks(Tasks,Projects);
+        Projects = ProjectManager.getAllProjects().ToList();
+    }
+    
+    private void OnDependencyChanged(ChangeEventArgs e, string name)
+    {
+        var isChecked = (bool)e.Value;
+        if (isChecked)
+            isSelect.Add(name);
+        else
+            isSelect.Remove(name);
+    }
+
+    
+    public void createTask()
+    {
+        string name = newTask.TaskName;
+        string description = newTask.TaskDescription;
+        DateOnly earlyStart = newTask.TaskDate;
+        int duration = newTask.TaskDuration;
+        TaskProgress progress = TaskProgress.Pending;
+        
+        if (Equals(newTask.TaskProgress, "Completada"))
+        {
+            progress = TaskProgress.Completed;
+        }
+        if (Equals(newTask.TaskProgress, "Progreso"))
+        {
+            progress = TaskProgress.InProgress;
+        }
+
+        if (!Equals(TaskManager.getTasksByName(name), null))
+        {
+            showError = true;
+            messageError = "Ya existe una Tarea creado bajo ese titulo";
+        }
+        else
+        {
+            Domain.Utilities.Task task = new Domain.Utilities.Task(name, description, earlyStart, duration, progress);
+            TaskManager.createTask(task);
+        
+            foreach (string dep in isSelect)
+            {
+                TaskManager.AddDependency(task, TaskManager.getTasksByName(dep));
+            }
+        }
+        TaskManager.RecalculateCriticalPath();
+        Tasks = TaskManager.getAllTasks().ToList();
+        ProjectManager.AlwaysUpdateTasks(Tasks,Projects);
+        Projects = ProjectManager.getAllProjects().ToList();
+        newTask = new NewTaskModel();
+        isSelect = new();
+    }
+    
+    private class NewTaskModel
+    {
+        [Required(ErrorMessage = "El Título es obligatorio.")]
+        public string TaskName { get; set; }
+
+        [Required(ErrorMessage = "La Descripción es obligatoria.")]
+        public string TaskDescription { get; set; }
+        
+        [Required(ErrorMessage = "La Fecha de Inicio es obligatorio.")]
+        public DateOnly TaskDate { get; set; }
+        
+        [Required(ErrorMessage = "La Duración es obligatoria.")]
+        [Range(1, int.MaxValue, ErrorMessage = "La duración debe ser igual o mayor a 1.")]
+        public int TaskDuration { get; set; }
+
+        [Required(ErrorMessage = "El progreso es obligatorio.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string TaskProgress { get; set; }
+    }
+
+}

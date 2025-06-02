@@ -1,0 +1,72 @@
+﻿@using Domain.Enum
+@inherits LayoutComponentBase
+@inject IUserManager UserManager
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4 d-flex justify-content-between align-items-center">
+            <div class="d-flex gap-3">
+                @if (UserManager.getUserByName("admin@sistema.com").login)
+                {
+                    <NavLink href="/create" class="text-white nav-link" activeClass="fw-bold text-primary">Usuarios</NavLink>
+                }
+                <NavLink href="/task" class="text-white nav-link" activeClass="fw-bold text-primary">Tareas</NavLink>
+                <NavLink href="/critical-path" class="text-white nav-link" activeClass="fw-bold text-primary">Ruta Crítica</NavLink>
+                @if (UserManager.getUserByName("admin@sistema.com").login || Users.FirstOrDefault(user => user.Types.Contains(UserType.ProjectAdmin) && user.login) != null)
+                {
+                    <NavLink href="/project" class="text-white nav-link" activeClass="fw-bold text-primary">Proyectos</NavLink>
+                    <NavLink href="/resource" class="text-white nav-link" activeClass="fw-bold text-primary">Recursos</NavLink>
+                }
+                @if (UserManager.getAllUsers().Any(u => u.login))
+                {   
+                    <NavLink href="/settings" class="text-white nav-link" activeClass="fw-bold text-primary">Ajustes</NavLink>
+                }
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+                <a href="/notifications" title="Notificaciones">
+                    <i class="fa-solid fa-bell" style="color: #e6e6e6;"></i>
+                </a>
+                @if (UserManager.getAllUsers().Any(u=>u.login))
+                {
+                    <a href="/logout" title="Login">
+                        <i class="fa-solid fa-user" style="color: #e6e6e6;"></i>
+                    </a>    
+                }
+                else{
+                    <a href="/login" title="Login">
+                        <i class="fa-solid fa-user" style="color: #e6e6e6;"></i>
+                    </a>    
+                }
+            </div>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+    
+</div>
+
+<div id="blazor-error-ui">
+    Ocurrió un error inesperado.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+
+@code
+{
+
+    private List<User> Users;
+    
+    protected override void OnInitialized()
+    {
+        Users = UserManager.getAllUsers().ToList();
+    }
+
+}

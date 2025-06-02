@@ -1,0 +1,152 @@
+﻿@page "/resource"
+@using System.ComponentModel.DataAnnotations
+@using Domain.Enum
+
+@inject IResourceManager ResourceManager
+@inject IUserManager UserManager
+@inject ITaskManager     TaskManager
+@inject IProjectManager     ProjectManager
+
+
+<PageTitle>Recursos</PageTitle>
+<h3>Gestión de Recursos</h3>
+@if (UserManager.getUserByName("admin@sistema.com").login)
+{
+    @if (Resources == null || Tasks == null)
+    {
+        <p>Cargando datos…</p>
+    }
+    else
+    {
+        <EditForm Model="newResource" OnValidSubmit="CreateResource">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="card mb-4 p-3">
+                <h5>Nuevo Recurso</h5>
+                <div class="row">
+                    <div class="mb-3 col-md-4">
+                        <label class="form-label">Nombre</label>
+                        <InputText class="form-control" @bind-Value="newResource.Name" />
+                    </div>
+                    <div class="mb-3 col-md-4">
+                        <label class="form-label">Tipo de Recurso</label>
+                        <InputSelect class="form-select" @bind-Value="newResource.TaskType">
+                            <option value="non">Seleccione Una opcion</option>
+                            <option value="Humano">Humano</option>
+                            <option value="Tecnológico">Tecnológico</option>
+                            <option value="Software">Software</option>
+                        </InputSelect>
+                    </div>
+                    <div class="mb-3 col-md-4">
+                        <label class="form-label">Descripción</label>
+                        <InputText class="form-control"
+                                   @bind-Value="newResource.Description" />
+                    </div>
+                </div>
+                @if (showError2)
+                {
+                    <div class="alert alert-danger mb-3" role="alert">
+                        <p><strong>Error:</strong>@messageError</p>
+                    </div>
+                }
+                <button type="submit" class="btn btn-success">
+                    Crear Recurso
+                </button>
+            </div>
+        </EditForm>
+        
+        <div class="card p-3">
+            <h5>Recursos Listado</h5>
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Recurso</th>
+                    <th>Tipo</th>
+                    <th>Descripción</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (Domain.Utilities.Resource r in Resources)
+                {
+                    <tr>
+                        <td>@r.Name</td>
+                        <td>@r.TaskType</td>
+                        <td>@r.Description</td>
+                        <td><button class="btn btn-sm btn-outline-primary" @onclick="() => DeleteResource(r)">Borrar</button></td>
+                        
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+@code {
+    private List<Domain.Utilities.Resource> Resources;
+    private List<User> Users;
+    private List<Project> Projects;
+    private NewResourceModel newResource = new NewResourceModel();
+    private List<Task> Tasks;
+    private bool showError = false;
+    private bool showError2 = false;
+    private string messageError = "";
+    protected override void OnInitialized()
+    {
+        Resources = ResourceManager.getAllResources().ToList();
+        Tasks = TaskManager.getAllTasks().ToList();
+        Users = UserManager.getAllUsers().ToList();
+        Projects = ProjectManager.getAllProjects().ToList();
+    }
+    
+    private void DeleteResource(Domain.Utilities.Resource resource)
+    {
+        ResourceManager.deleteResource(resource);
+        Resources = ResourceManager.getAllResources().ToList();
+        TaskManager.AlwaysUpdateTasks(Resources, Tasks);
+        Tasks = TaskManager.getAllTasks().ToList();
+    }
+    
+    public void CreateResource()
+    {
+        string name = newResource.Name;
+        string type = newResource.TaskType;
+        string description = newResource.Description;
+        TaskType typeReal = TaskType.Human;
+
+        if (Equals(type, "Tecnológico"))
+        {
+            typeReal = TaskType.Infrastructure;
+        }
+        if (Equals(type, "Software"))
+        {
+            typeReal = TaskType.Software;
+        }
+
+        Domain.Utilities.Resource resource = new Domain.Utilities.Resource(name, typeReal, description);
+        if(!Equals(ResourceManager.getResourcesByName(name), null))
+        {
+            showError2 = true;
+            messageError = "Ya existe un recurso creado bajo ese nombre";
+        }
+        ResourceManager.createResource(resource);
+        Resources = ResourceManager.getAllResources().ToList();
+        newResource = new NewResourceModel();
+    }
+    
+    public class NewResourceModel
+    {
+        [Required(ErrorMessage = "El nombre es obligatorio.")]
+        public string Name { get; set; }
+
+        [Required(ErrorMessage = "Selecciona un tipo.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string TaskType { get; set; }
+
+        [Required(ErrorMessage = "La descripción es obligatoria.")]
+        public string Description { get; set; }
+    }
+    
+    
+
+}
