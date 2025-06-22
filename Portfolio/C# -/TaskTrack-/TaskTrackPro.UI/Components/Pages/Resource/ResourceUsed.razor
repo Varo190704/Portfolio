@@ -1,0 +1,99 @@
+﻿@page "/ResourceUsed"
+@using System.ComponentModel.DataAnnotations
+@using Domain.Enum
+@using Domain.Validators
+
+@inject IResourceManager ResourceManager
+@inject IProjectManager ProjectManager
+
+
+<PageTitle>Recursos Usados</PageTitle>
+<h3>Recursos Usados</h3>
+<EditForm Model="newResource" OnValidSubmit="SelectResource">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="card mb-4 p-3">
+        <h5>Mostrar calendario de uso del Recurso:</h5>
+        <div class="mb-3 col-md-6">
+            <label class="form-label">Seleccionar Recurso</label>
+            <InputSelect class="form-select" @bind-Value="newResource.Name">
+                <option value="non">-- elige un Recurso --</option>
+                @foreach (Domain.Utilities.Resource r in Resources)
+                {
+                    <option value="@r.Name">@r.Name</option>
+                }
+            </InputSelect>
+        </div>
+        <button type="submit" class="btn btn-primary">Mostrar el uso del recurso</button>
+    </div>
+</EditForm>
+@if(!Equals(SelResource, null) && SelResource.ResourceUsedComp.Count > 0)
+{ 
+    <h5>Calendario de uso del recurso @SelResource.Name</h5>
+    <div class="d-flex align-items-center mb-4">
+        <div class="flex-grow-1">
+            <div class="progress" style="height: 2rem;">
+                @if (!Equals(SelResource.ResourceUsedComp, null))
+                {
+                    DateOnly uStart = SelResource.ResourceUsedComp.First().Start;
+                    DateOnly uEnd = SelResource.ResourceUsedComp.Last().End;
+                    int totUsed = (uEnd.DayNumber - uStart.DayNumber) + 1;
+                    DateOnly cursor = uStart;
+                    foreach (Domain.Validators.ResourceUsed r in SelResource.ResourceUsedComp)
+                    {
+                        
+                        if (uStart > cursor)
+                        {
+                            DateOnly fStart = cursor;
+                            DateOnly fEnd = r.Start.AddDays(-1);
+                            int fDay = r.Start.DayNumber - cursor.DayNumber;
+                            int tNUsed = fDay * 100 / totUsed;
+                            <div class="progress-bar bg-danger" role="progressbar" style="width:@tNUsed%" title="@($"Libre desde {fStart:d} hasta {fEnd:d}")">
+                                Libre
+                            </div>
+                        }
+                        int uDay = (r.End.DayNumber - r.Start.DayNumber) + 1;
+                        int tUsed = uDay * 100 / totUsed;
+                        <div class="progress-bar bg-success" role="progressbar" style="width:@tUsed%" title="@($"{r.Task} ({r.Start:d}-{r.End:d}) en proyecto {r.Project}")">
+                            @r.Task
+                        </div>
+                        cursor = r.End.AddDays(1);
+                        <div class="progress-bar bg-white" role="progressbar" style="width:1%">
+                        </div>
+                    }   
+                }
+            </div>
+        </div>
+    </div>
+}
+else if(!Equals(SelResource, null) && SelResource.ResourceUsedComp.Count == 0)
+{
+    <div class="alert alert-danger mb-3" role="alert">
+        <p><strong>Error:</strong>El recurso seleccionado no fue usado nunca</p>
+    </div>
+}
+
+
+@code 
+{
+    private List<Domain.Utilities.Resource> Resources;
+    private ResourceViewModel newResource = new ResourceViewModel();
+    private Domain.Utilities.Resource SelResource;
+    
+    protected override void OnInitialized()
+    {
+        Resources = ResourceManager.getAllResources().ToList();
+    }
+    
+    private void SelectResource()
+    {
+        SelResource = ResourceManager.getResourcesByName(newResource.Name);
+    }
+    
+    private class ResourceViewModel
+    {
+        [Required(ErrorMessage = "Selecciona un recurso.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string Name { get; set; }
+    }
+}

@@ -1,0 +1,1012 @@
+﻿@page "/project"
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using Domain.Enum
+@using Domain.Validators
+@using Microsoft.AspNetCore.Mvc.TagHelpers.Cache
+
+@inject IProjectManager ProjectManager
+@inject ITaskManager TaskManager
+@inject IAlertManager AlertManager
+@inject IUserManager UserManager
+@inject IResourceManager ResourceManager
+
+@if (UserManager.getUserByName("admin@sistema.com").login)
+{
+    <PageTitle>Proyectos</PageTitle>
+    <h3>Crear Proyecto</h3>
+        <EditForm Model="@newProject" OnValidSubmit="CreateProject">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label class="form-label">Nombre del Proyecto</label>
+                <InputText class="form-control" @bind-Value="newProject.Name" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Descripción (máx. 400 caracteres)</label>
+                <InputTextArea class="form-control" @bind-Value="newProject.Description" maxlength="400" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Fecha de Inicio Estimada</label>
+                <InputDate class="form-control" @bind-Value="newProject.EstimatedStartDate" />
+            </div>
+            @if (showError2)
+            {
+                <div class="alert alert-danger mb-3" role="alert">
+                    <p><strong>Error:</strong>@messageError2</p>
+                </div>
+            }
+            <button type="submit" class="btn btn-success">Crear Proyecto</button>
+        </EditForm>
+}
+@if (UserManager.getUserByName("admin@sistema.com").login || Users.FirstOrDefault(user => user.Types.Contains(UserType.ProjectAdmin) && user.login) != null)
+{
+    if (Projects.Count()!=0)
+    {
+        <br>
+        <br>
+        <br>
+        <h3>Proyectos</h3>
+
+        <div class="list-group mb-4">
+            @foreach (Domain.Utilities.Project p in Projects)
+            {
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>@p.Name</span>
+                    @if (UserManager.getUserByName("admin@sistema.com").login)
+                    {
+                        <button class="btn btn-sm btn-outline-primary" @onclick="() => SelectProject(p)">Seleccionar</button>
+                        <button class="btn btn-sm btn-outline-primary" @onclick="() => DeleteProject(p)">Borrar</button>
+                    }
+                </div>
+            }
+        </div> 
+        
+        if (SelProject!=null && SelectedProject.ContainsKey(SelProject) && SelectedProject[SelProject])
+        {
+            <div class="card mb-4 p-3">
+                <h3>Detalle: @SelProject.Name</h3>
+
+                <div class="card p-3 mb-4">
+                    <p><strong>Descripción:</strong> @SelProject.Description</p>
+                    <p><strong>Fecha Inicio:</strong> @SelProject.StartDate.ToString("MM-dd-yyyy")</p>
+                    <p><strong>Fin Estimado:</strong> @SelProject.StartDate.AddDays(SelProject.Duration).ToString("MM-dd-yyyy")</p>
+                </div>
+
+                <h5>Tareas Críticas</h5>
+                @if (SelProject.getCriticalPath().Any())
+                {
+                    <ul class="list-group mb-3">
+                        @foreach (Task task in SelProject.getCriticalPath())
+                        {
+                            <li class="list-group-item">
+                                @task.Name (Duración: @task.Duration días)
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p>No hay tareas criticas.</p>
+                }
+                <h5>Tareas No Críticas</h5>
+                @if (SelProject.Tasks.Where(t => t.Slak > 0).ToList().Any())
+                {
+                    <ul class="list-group">
+                        @foreach (var task in SelProject.Tasks.Where(t => t.Slak > 0).ToList())
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                @task.Name
+                                <button class="btn btn-outline-info btn-sm" @onclick="() => SelectTask(task)">
+                                    Ver holgura
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p>No hay tareas no críticas.</p>
+                }
+
+                @if (SelectedTask != null)
+                {
+                    <div class="alert alert-info mt-3">
+                        <strong>Holgura de “@SelectedTask.Name”:</strong> @SelectedTask.Slak días
+                    </div>
+                }
+                
+                <h5>Miembros</h5>
+                @if (SelProject.Members.Any())
+                {
+                    <ul class="list-group">
+                        @foreach (User user in SelProject.Members)
+                        {
+                            <li class="list-group-item">@user.Email</li>
+                            if(!Equals(user, SelProject.Lider) || !Equals(user, SelProject.Admin))
+                            {
+                                <button class="btn btn-outline-info btn-sm" @onclick="() => delMember(user)">
+                                    Borrar
+                                </button>
+                            }
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p>No hay miembros.</p>
+                }
+                <h5>Administrador</h5>
+                @if (SelProject.Admin != null)
+                {
+                    <p>@SelProject.Admin</p>
+                }
+                else
+                {
+                    <p>No hay administrador.</p>
+                }
+                <h5>Tareas</h5>
+                @if (SelProject.Tasks.Any())
+                {
+                    <ul class="list-group">
+                        @foreach (Task task in SelProject.Tasks)
+                        {
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>@task.Name</span>
+                                    <button class="btn btn-outline-info btn-sm" @onclick="() => delTask(task)">
+                                        Borrar
+                                    </button>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6>Recursos asignados</h6>
+                                    <ul class="list-group">
+                                        @foreach (Resource r in task.Resources)
+                                        {
+                                            <li class=@r.Name>@(r.Name)</li>
+                                        }
+                                    </ul>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p>No hay tareas.</p>
+                }
+                @if (Equals(SelProject.Lider, currentUser.Email))
+                {
+                    <button class="btn btn-outline-info btn-sm" @onclick="() => export(1)">
+                        Exportar Modo CSV
+                    </button>
+                    <button class="btn btn-outline-info btn-sm" @onclick="() => export(2)">
+                        Exportar Modo JSON
+                    </button>
+
+                    if (txtView)
+                    {
+                        <br>
+                        <br>
+                        <div class="card mb-4 p-3">
+                            <pre>@ExportTxt</pre>
+                        </div>
+                    }
+                }
+                @if (Equals(SelProject.Admin, currentUser.Email) || Equals(currentUser, UserManager.getUserByName("admin@sistema.com"))) 
+                {
+                    <br>
+                    <EditForm Model="assignTaskUser" OnValidSubmit="AssTaskToUser">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+                        <div class="card mb-4 p-3">
+                            <h5>Asignar Tarea a Usuario</h5>
+                            <div class="row">
+                                <div class="mb-3 col-md-6">
+                                    <label class="form-label">Usuario</label>
+                                    <InputSelect class="form-select" @bind-Value="assignTaskUser.UserEmail">
+                                        <option value="non">-- elige un Usuario --</option>
+                                        @foreach (User p in SelProject.Members)
+                                        {
+                                            <option value="@p.Email">@p.Email</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="mb-3 col-md-6">
+                                    <label class="form-label">Tarea</label>
+                                    <InputSelect class="form-select" @bind-Value="assignTaskUser.TaskName">
+                                        <option value="non">-- elige una Tareas --</option>
+                                        @foreach (Task t in SelProject.Tasks)
+                                        {
+                                            <option value="@t.Name">@t.Name</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                Asignar Tarea a Usuario
+                            </button>
+                        </div>
+                        @if (showError4)
+                        {
+                            <div class="alert alert-danger mb-3" role="alert">
+                                <p><strong>Error:</strong> Tarea ya fue asignada a este usuario</p>
+                            </div>
+                        }
+                    </EditForm>
+                    <br>
+                    <br>
+                    <br>       
+
+                    <EditForm Model="assign" OnValidSubmit="AssTask">
+                        <DataAnnotationsValidator/>
+                        <ValidationSummary/>
+                        <div class="card mb-4 p-3">
+                            <h5>Asignar Tarea a Proyecto</h5>
+                            <div class="row">
+                                <div class="mb-3 col-md-6">
+                                    <label class="form-label">Tarea</label>
+                                    <InputSelect class="form-select" @bind-Value="assign.TaskName">
+                                        <option value="non">-- elige una tarea --</option>
+                                        @foreach (Task t in Tasks)
+                                        {
+                                            if (!SelProject.Tasks.Any(t2 => t2.Name == t.Name))
+                                            {
+                                                <option value="@t.Name">@t.Name</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                Asignar Tarea
+                            </button>
+                        </div>
+                    </EditForm>
+                    <br>
+                    <br>
+                    <br>
+
+                    <EditForm Model="assignUserProject" OnValidSubmit="AssMember">
+                        <DataAnnotationsValidator/>
+                        <ValidationSummary/>
+                        <div class="card mb-4 p-3">
+                            <h5>Asignar Usuario a Proyecto</h5>
+                            <div class="row">
+                                <div class="mb-3 col-md-6">
+                                    <label class="form-label">Usuario</label>
+                                    <InputSelect class="form-select" @bind-Value="assignUserProject.UserEmail">
+                                        <option value="non">-- elige un Usuario --</option>
+                                        @foreach (User t in Users)
+                                        {
+                                            if (!SelProject.Members.Any(t2 => t2.Email == t.Email))
+                                            {
+                                                <option value="@t.Email">@t.Email</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                Asignar Miembro
+                            </button>
+                        </div>
+                    </EditForm>
+                    <br>
+                    <br>
+                    <br>    
+                    @if (!selectOtherResource && !notAssResource)
+                    {
+                        <EditForm Model="assign2" OnValidSubmit="AssResource">
+                        <DataAnnotationsValidator/>
+                        <ValidationSummary/>
+                            <div class="card mb-4 p-3">
+                                <h5>Asignar Recurso a Tarea</h5>
+                                <div class="row">
+                                    <div class="mb-3 col-md-6">
+                                        <label class="form-label">Recurso</label>
+                                        <InputSelect class="form-select" @bind-Value="assign2.ResourceName">
+                                            <option value="non">-- elige un recurso --</option>
+                                            @foreach (Resource r in Resources)
+                                            {
+                                                <option value="@r.Name">@r.Name</option>
+                                            }
+                                        </InputSelect>
+                                    </div>
+                                    <div class="mb-3 col-md-6">
+                                        <label class="form-label">Tarea</label>
+                                        <select class="form-select" @onchange="TChanged" >
+                                            <option value="non">-- elige una tarea --</option>
+                                            @foreach (Task t in SelProject.Tasks)
+                                            {
+                                                if (!Equals(t.Status, TaskProgress.Completed))
+                                                {
+                                                    <option value="@t.Name">@t.Name</option>
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="mb-3 col-md-6">
+                                        <label class="form-label">Fecha de Inicio…</label>
+                                        <InputDate class="form-control" @bind-Value="assign2.StartDate" 
+                                                   min="@(minDate.ToString("yyyy-MM-dd"))"
+                                                   max="@(maxDate.ToString("yyyy-MM-dd"))"
+                                                   />
+                                    </div>
+                                    <div class="mb-3 col-md-6">
+                                        <label class="form-label">Fecha de Fin…</label>
+                                        <InputDate class="form-control" @bind-Value="assign2.EndDate"
+                                                   min="@(minDate.ToString("yyyy-MM-dd"))"
+                                                   max="@(maxDate.ToString("yyyy-MM-dd"))"
+                                                   />
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        Asignar Recurso
+                                    </button>
+                                </div>
+                            </div>
+                        </EditForm> 
+                    }
+                    if (showError)
+                    {
+                        <div class="alert alert-danger mb-3" role="alert">
+                            <p><strong>Error:</strong> Recurso ya fue asignado a esta Tarea</p>
+                        </div>
+                    }
+                    if (selectOtherResource || notAssResource)
+                    {
+                        <div class="card mb-4 p-3">
+                            <p>El recurso que se quiere asignar esta siendo utilizado en otra tarea</p>
+                            @if (selectOtherResource)
+                            {
+                                <h5>¿Desea cambiar el recurso a alguno disponible y compatible? (no podra cambiar su decisión mas adelante)</h5>
+                                <p>Si clickea "Si" su tarea iniciara y finalizara en las fechas ingresadas, pero el sistema le asignara un recurso compatible al seleccionado</p>
+                                <div class="row">
+                                    <button type="submit" class="btn btn-primary" @onclick="changeResource">
+                                        Si.
+                                    </button>
+                                </div>
+                                <p>Si clickea "No" su tarea iniciara en la misma fecha pero terminará el: @assign2.EndDate y no podra cambiar su decisión</p>
+                                <div class="row">
+                                    <button type="submit" class="btn btn-primary" @onclick="notChangeResource">
+                                        No.
+                                    </button>
+                                </div>
+                            }
+                            @if (notAssResource)
+                            {
+                                if (!selectOtherResource)
+                                {
+                                    <p>Si clickea "Asigar recurso" su tarea iniciara en la misma fecha pero terminará el: @assign2.EndDate y no podra cambiar su decisión</p>
+                                    <div class="row">
+                                        <button type="submit" class="btn btn-primary" @onclick="notChangeResource">
+                                            Asignar recurso
+                                        </button>
+                                    </div> 
+                                }
+                                <p>Si clickea "No asignar ningun recurso" el sistema no continuara con el proceso y quedara como si no hubiese intentado asignar alguno</p>
+                                <div class="row">
+                                    <button type="submit" class="btn btn-primary" @onclick="notResource">
+                                        No asignar ningun recurso.
+                                    </button>
+                                </div>
+
+                            }
+                        </div>
+                    }
+                    <br>
+                    <br>
+                    <br>
+                    if (UserManager.getUserByName(SelProject.Admin).login || UserManager.getUserByName("admin@sistema.com").login)
+                    {
+                        <EditForm Model="assignLiderProject" OnValidSubmit="AssLider">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+                            <div class="card mb-4 p-3">
+                                <h5>Asignar Lider a Proyecto</h5>
+                                <div class="row">
+                                    <div class="mb-3 col-md-6">
+                                        <label class="form-label">Usuario</label>
+                                        <InputSelect class="form-select" @bind-Value="assignLiderProject.UserEmail">
+                                            <option value="non">-- elige un Usuario --</option>
+                                            @foreach (User t in Users)
+                                            {
+                                                if (SelProject.Lider != t.Email)
+                                                {
+                                                    <option value="@t.Email">@t.Email</option>
+                                                }
+                                            }
+                                        </InputSelect>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    Asignar Lider
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                    <br>
+                    <br>
+                    <br>    
+                    if (UserManager.getUserByName("admin@sistema.com").login)
+                    {
+                        <EditForm Model="assignAdminProject" OnValidSubmit="AssAdmin">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+                            <div class="card mb-4 p-3">
+                                <h5>Asignar Administador a Proyecto</h5>
+                                <div class="row">
+                                    <div class="mb-3 col-md-6">
+                                        <label class="form-label">Usuario</label>
+                                        <InputSelect class="form-select" @bind-Value="assignAdminProject.UserEmail">
+                                            <option value="non">-- elige un Usuario --</option>
+                                            @foreach (User t in Users)
+                                            {
+                                                if (SelProject.Admin != t.Email)
+                                                {
+                                                    <option value="@t.Email">@t.Email</option>
+                                                }
+                                            }
+                                        </InputSelect>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    Asignar Admin
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                }
+                else
+                {
+                    <p>Solo el administrador del projecto o del sistema puede agregar Tareas, Usuarios o Recursos.</p>
+                }
+            </div>
+        }
+        <br>
+        <br>
+        <br>
+        <br>
+    }
+}
+
+@code {
+    private List<Domain.Utilities.Project> Projects;
+    private List<Alert> alerts;
+    private List<User> Users;
+    private List<Resource> Resources;
+    private Dictionary<Domain.Utilities.Project, bool>  SelectedProject = new Dictionary<Domain.Utilities.Project, bool>();
+    private Task SelectedTask;
+    private Domain.Utilities.Project SelProject;
+    private List<Task> Tasks;
+    private NewAssignModel assign = new NewAssignModel();
+    private NewAssign4Model assignTaskUser = new NewAssign4Model();
+    private NewAssign2Model assignUserProject = new NewAssign2Model();
+    private NewAssign3Model assignAdminProject = new NewAssign3Model();
+    private NewAssign6Model assignLiderProject = new NewAssign6Model();
+    private ProjectViewModel newProject = new ProjectViewModel()
+    {
+        EstimatedStartDate = new DateOnly(2025, 7, 1)
+    };
+    private bool showError = false;
+    private string messageError = "";
+    private bool showError2 = false;
+    private string messageError2 = "";
+    private bool showError4 = false;
+    private bool txtView = false;
+    private bool selectOtherResource = false;
+    private string ExportTxt = "";
+    private User currentUser;
+
+    private NewAssign5Model assign2 = new NewAssign5Model()
+    {
+        StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(-1)),
+        EndDate = DateOnly.FromDateTime(DateTime.Now)
+    };
+    private Task taskToAssign;
+    private Resource resourceToAssing;
+    private bool notAssResource = false;
+    private DateOnly minDate;
+    private DateOnly maxDate;
+    
+    protected override void OnInitialized()
+    {
+        alerts = AlertManager.getAllAlerts().ToList();
+        Projects = ProjectManager.getAllProjects().ToList();
+        Tasks = TaskManager.getAllTasks().ToList();
+        Users = UserManager.getAllUsers().ToList();
+        Resources = ResourceManager.getAllResources().ToList();
+        currentUser = Users.FirstOrDefault(u => u.login);
+        minDate = DateOnly.FromDateTime(DateTime.Today);
+        maxDate = DateOnly.FromDateTime(DateTime.Today);
+    }
+
+    private void TChanged(ChangeEventArgs t)
+    {
+        showError = false;
+        assign2.TaskName = t.Value.ToString();
+        Task task = TaskManager.getTasksByName(assign2.TaskName);
+        assign2.StartDate = task.StartDate;
+        assign2.EndDate = task.EndDate;
+        minDate = task.StartDate;
+        maxDate = task.EndDate;
+        assign2.MinDate = minDate;
+        assign2.MaxDate = maxDate;
+        StateHasChanged();
+    }
+    
+    private void allFalse()
+    {
+        showError = false;
+        showError2 = false;
+        showError4 = false;
+    }
+    
+    private void SelectProject(Domain.Utilities.Project proj)
+    {
+        if (SelectedProject.ContainsKey(proj) && SelectedProject[proj])
+        {
+            SelectedProject[proj] = false;
+        }
+        else
+        {
+            SelectedProject.Clear();
+            SelectedProject[proj] = true;
+            SelProject = proj;
+            SelectedTask = null;
+        }
+        allFalse();
+    }
+    
+    private void DeleteProject(Domain.Utilities.Project project)
+    {
+        ProjectManager.deleteProject(project);
+        Projects = ProjectManager.getAllProjects().ToList();
+        allFalse();
+    }
+    
+    private void SelectTask(Task t)
+    {
+        SelectedTask = t;   
+        allFalse();
+    }
+
+    private void CreateProject()
+    {
+        showError2 = false;
+        string name = newProject.Name;
+        string desc = newProject.Description;
+        DateOnly start = newProject.EstimatedStartDate;
+        if (!Equals(ProjectManager.getProjectsByName(name), null))
+        {
+            showError2 = true;
+            messageError2 = "Ya existe un proyecto creado bajo ese nombre";
+        }
+        else
+        {
+            Domain.Utilities.Project project = new Domain.Utilities.Project(name, desc, currentUser,start);
+            project.Lider = currentUser.Email;
+            ProjectManager.createProject(project);
+        }
+        Projects = ProjectManager.getAllProjects().ToList();
+        newProject = new ProjectViewModel();
+        newProject.EstimatedStartDate = new DateOnly(2025, 7, 1);
+        allFalse();
+    }
+        
+    private void AssTask()
+    {
+        Task task = TaskManager.getTasksByName(assign.TaskName);
+        ProjectManager.assTask(SelProject, task);
+        foreach (Task t in task.Dependencies)
+        {
+            if (!SelProject.Tasks.Contains(t))
+            {
+                ProjectManager.assTask(SelProject, t);
+            }
+        }
+        foreach (Task t in SelProject.Tasks)
+        {
+            Task sisTask = Tasks.FirstOrDefault(t2 => t2.Name == t.Name);
+            if (sisTask != null)
+            {
+                if (sisTask.Dependencies.Any(dep => dep.Name == task.Name))
+                {
+                    if (!t.Dependencies.Contains(task))
+                    {
+                        TaskManager.AddDependency(t, task);
+                    }
+                }
+            }
+        }
+        Projects = ProjectManager.getAllProjects().ToList();
+        SelProject = ProjectManager.getProjectsByName(SelProject.Name);
+        SelectedProject.Clear();
+        SelectedProject[SelProject] = true;
+        assign = new NewAssignModel();
+        allFalse();
+    }
+    
+    private void AssTaskToUser()
+    {
+        User user = UserManager.getUserByName(assignTaskUser.UserEmail);
+        Task task = SelProject.Tasks.Find(r => Equals(r.Name, assignTaskUser.TaskName));
+         if (user.tasks.Any(t => t.Name == task.Name))
+        {
+            showError4 = true;
+        }
+        else
+        {
+            ProjectManager.assTaskToMember(SelProject, UserManager.getUserByName(SelProject.Admin), user, task);
+            Projects = ProjectManager.getAllProjects().ToList();
+            SelProject = ProjectManager.getProjectsByName(SelProject.Name);
+            SelectedProject.Clear();
+            SelectedProject[SelProject] = true;
+            assignTaskUser = new NewAssign4Model();
+            allFalse();
+        }
+    }
+    
+    private void AssMember()
+    {
+        User u = UserManager.getUserByName(assignUserProject.UserEmail);
+        ProjectManager.assignMember(SelProject, u);
+        Projects = ProjectManager.getAllProjects().ToList();
+        SelProject = ProjectManager.getProjectsByName(SelProject.Name);
+        SelectedProject.Clear();
+        SelectedProject[SelProject] = true;
+        assignUserProject = new NewAssign2Model();
+        allFalse();
+    }
+    
+    private void AssAdmin()
+    {
+        User u = UserManager.getUserByName(assignAdminProject.UserEmail);
+        foreach (Alert a in alerts)
+        {
+            if (Equals(a.Email, currentUser.Email))
+            {
+                a.UpdateByEmail(u.Email);
+            }
+        }
+        
+        if (!SelProject.Members.Any(m=> m.Email == u.Email))
+        {
+            ProjectManager.assignMember(SelProject, u);
+        }
+        ProjectManager.assAdmin(SelProject, u);
+        Projects = ProjectManager.getAllProjects().ToList();
+        SelProject = ProjectManager.getProjectsByName(SelProject.Name);
+        SelectedProject.Clear();
+        SelectedProject[SelProject] = true;
+        assignAdminProject = new NewAssign3Model();
+        allFalse();
+    }
+    
+    private void AssLider()
+    {
+        User u = UserManager.getUserByName(assignLiderProject.UserEmail);
+        
+        if (!SelProject.Members.Any(m=> m.Email == u.Email))
+        {
+            ProjectManager.assignMember(SelProject, u);
+        }
+        ProjectManager.assLider(SelProject, u);
+        Projects = ProjectManager.getAllProjects().ToList();
+        SelProject = ProjectManager.getProjectsByName(SelProject.Name);
+        SelectedProject.Clear();
+        SelectedProject[SelProject] = true;
+        assignLiderProject = new NewAssign6Model();
+        allFalse();
+    }
+    
+    private void AssResource()
+    {
+        Resource resource = ResourceManager.getResourcesByName(assign2.ResourceName);
+        Task task = TaskManager.getTasksByName(assign2.TaskName);
+        if (task.Resources.Any(r => r.Name == resource.Name))
+        {
+            showError = true;
+        }
+        else
+        {
+            taskToAssign = task;
+            resourceToAssing = resource;;
+            if (ResourceManager.isUsed(resource, assign2.StartDate, assign2.EndDate))
+            {
+                if (Resources.Any(r=> !task.Resources.Contains(r) && r.inCommon == resource.inCommon && !r.IsResourceUsed(assign2.StartDate, assign2.EndDate)))
+                {
+                    selectOtherResource = true;
+                    notAssResource = true;
+                }
+                else
+                {
+                    notAssResource = true;
+                }
+            }
+            else
+            {
+                elseFromOtherResource(resource, task);
+            }
+        }
+    }
+
+    public void changeResource()
+    {
+        resourceToAssing = Resources.Find(r => !taskToAssign.Resources.Contains(r) && r.inCommon == resourceToAssing.inCommon && !r.IsResourceUsed(assign2.StartDate, assign2.EndDate));
+        notOtherResource(resourceToAssing, taskToAssign);
+    }
+    
+    public void notChangeResource()
+    {
+        notOtherResource(resourceToAssing, taskToAssign);
+    }
+
+    public void notResource()
+    {
+        updateAfterAssResource();
+    }
+    
+    public void notOtherResource(Resource resource, Task task)
+    {
+        if (ResourceManager.isUsed(resource, assign2.StartDate, assign2.EndDate))
+        {
+            ResourceUsed r1 = ResourceManager.getUsed(resource, assign2.StartDate, assign2.EndDate);
+            if (assign2.StartDate >= r1.Start && assign2.StartDate <= r1.End || assign2.StartDate <= r1.Start && assign2.StartDate <= r1.End)
+            {
+                assign2.EndDate = assign2.EndDate.AddDays(r1.End.DayNumber - assign2.StartDate.DayNumber);
+                assign2.StartDate = r1.End;
+                if (task.EndDate < assign2.EndDate)
+                {
+                    task.EndDate = assign2.EndDate;
+                    task.LateEndDate = task.EndDate.AddDays(task.Slak);
+                }
+                ResourceManager.assigned(resource.Name, task.Name, SelProject.Name, assign2.StartDate, assign2.EndDate);
+                CreateAlert(r1.Task, task.Name, resource.Name);
+                task.Resources.Add(resource);
+                TaskManager.updateTask(task);
+            }
+        }
+        else
+        {
+            elseFromOtherResource(resource, task);
+        }
+        updateAfterAssResource();
+    }
+
+    public void elseFromOtherResource(Resource resource, Task task)
+    {
+        task.Resources.Add(resource);
+        TaskManager.updateTask(task);
+        ResourceManager.assigned(resource.Name, task.Name, SelProject.Name, assign2.StartDate, assign2.EndDate);
+        updateAfterAssResource();
+    }
+
+    public void updateAfterAssResource()
+    {
+        Resources = ResourceManager.getAllResources().ToList();
+        ProjectManager.AlwaysUpdateTasks(Tasks,Projects);
+        Projects = ProjectManager.getAllProjects().ToList();
+        assign2 = new NewAssign5Model();
+        SelProject = ProjectManager.getProjectsByName(SelProject.Name);
+        SelectedProject.Clear();
+        SelectedProject[SelProject] = true;
+        SelProject.refreshTimes();
+        selectOtherResource = false;
+        notAssResource = false;
+        foreach (Domain.Utilities.Project p in Projects)
+        {
+            foreach (Task t in p.Tasks)
+            {
+                foreach (Resource r in t.Resources)
+                {
+                    r.ResourceUsedComp.OrderBy(r => r.Start);
+                }
+            }
+        }
+        assign2.StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(-1));
+        assign2.EndDate = DateOnly.FromDateTime(DateTime.Now);
+        allFalse();
+    }
+    
+    private void CreateAlert(string t1, string t2, string r)
+    {
+        string desc = $"{t1} esta usando {r} y la lista de espera está en un periodo de tiempo en el cual se pisaria con la tarea {t2} del proyecto {SelProject.Name}. Debido a eso se mueve la tarea al final de la lista";
+        int id;
+        if (alerts.Count > 0)
+        {
+            id = alerts.Count+1;
+        }
+        else
+        {
+            id = 1;
+        }
+        string u = SelProject.Admin;
+        Alert alert = new Alert(desc, id, u); 
+        AlertManager.createAlert(alert);
+        alerts = AlertManager.getAllAlerts().ToList();
+    }
+    
+    private void export(int mod)
+    {
+        if (txtView)
+        {
+            txtView = false;
+        }
+        else
+        {
+            txtView = true;
+            List<Domain.Utilities.Project> projects = ProjectManager.getAllProjects().OrderBy(p => p.StartDate).ToList();
+            StringBuilder sb = new StringBuilder();
+            if (mod == 1)
+            {
+                sb.AppendLine($"Proyecto {SelProject.Name}, {SelProject.StartDate:dd/MM/YYYY}");
+                foreach (Task t in SelProject.Tasks.OrderByDescending(t => t.Name).ToList())
+                {
+                    string y_n = SelProject.getCriticalPath().Contains(t) ? "S" : "N";
+                    sb.AppendLine($"{t.Name}, {t.StartDate:dd/MM/YYYY}, {y_n}");
+                    List<Resource> resourceListed = new List<Resource>();
+                    foreach (Resource r in t.Resources)
+                    {
+                        if (!resourceListed.Any(r1 => r1.Name == r.Name))
+                        {
+                            resourceListed.Add(r);
+                            int cant = t.Resources.Count(r2 => r2.Name == r.Name);
+                            sb.AppendLine($"{cant} {r.Name}");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                sb.AppendLine("[");
+                sb.AppendLine("\t{");
+                sb.AppendLine($"\t\t\"nombre\": \"{SelProject.Name}\",");
+                sb.AppendLine($"\t\t\"fecha_inicio\": \"{SelProject.StartDate:dd/MM/YYYY}\",");
+                sb.AppendLine($"\t\t\"tareas\": [");
+                foreach (Task t in SelProject.Tasks.OrderByDescending(t => t.Name).ToList())
+                {
+                    sb.AppendLine("\t\t\t{");
+                    string y_n = SelProject.getCriticalPath().Contains(t) ? "S" : "N";
+                    sb.AppendLine($"\t\t\t\t\"titulo\": \"{t.Name}\",");
+                    sb.AppendLine($"\t\t\t\t\"fecha_inicio\": \"{t.StartDate:dd/MM/YYYY}\",");
+                    sb.AppendLine($"\t\t\t\t\"camino_critico\": \"{y_n}\",");
+                    sb.AppendLine($"\t\t\t\t\"recursos\": [");
+                    List<Resource> resourceListed = new List<Resource>();
+                    foreach (Resource r in t.Resources)
+                    {
+                        if (!resourceListed.Any(r1 => r1.Name == r.Name))
+                        {
+                            resourceListed.Add(r);
+                            int cant = t.Resources.Count(r2 => r2.Name == r.Name);
+                            sb.AppendLine($"\t\t\t\t\t{cant} {r.Name}");
+                        }
+                    }
+                    sb.AppendLine($"\t\t\t\t]");
+                    sb.AppendLine("\t\t\t},");
+                }
+                sb.AppendLine($"\t\t]");
+                sb.AppendLine("\t},");
+                sb.AppendLine("]");
+            }
+            ExportTxt = sb.ToString();   
+        }
+        allFalse();
+    }
+    
+    public class ProjectViewModel
+    {
+        [Required(ErrorMessage = "El nombre es obligatorio.")]
+        public string Name { get; set; }
+
+        [Required(ErrorMessage = "La descripción es obligatoria.")]
+        [MaxLength(400, ErrorMessage = "La descripción no puede superar los 400 caracteres.")]
+        public string Description { get; set; }
+
+        [Required(ErrorMessage = "La fecha de inicio es obligatoria.")]
+        public DateOnly EstimatedStartDate { get; set; }
+    }
+
+    public class NewAssignModel
+    {
+        [Required(ErrorMessage = "Selecciona un tipo.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string TaskName { get; set; }
+    }
+    
+    public class NewAssign2Model
+    {
+        [Required(ErrorMessage = "Selecciona un tipo.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string UserEmail { get; set; }
+    }
+    
+    public class NewAssign3Model
+    {
+        [Required(ErrorMessage = "Selecciona un tipo.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string UserEmail { get; set; }
+    }
+    
+    public class NewAssign6Model
+    {
+        [Required(ErrorMessage = "Selecciona un tipo.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string UserEmail { get; set; }
+    }
+    
+    public class NewAssign4Model
+    {
+        [Required(ErrorMessage = "Selecciona un tipo.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string UserEmail { get; set; }
+
+        [Required(ErrorMessage = "Selecciona un tipo.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string TaskName { get; set; }
+    }
+
+    public class NewAssign5Model
+    {
+        [Required(ErrorMessage = "Selecciona un tipo.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string ResourceName { get; set; }
+
+        [Required(ErrorMessage = "Selecciona un tipo.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string TaskName { get; set; }
+
+        [Required(ErrorMessage = "La fecha de inicio es obligatoria.")]
+        public DateOnly StartDate { get; set; }
+    
+        [Required(ErrorMessage = "La fecha de fin es obligatoria.")]
+        public DateOnly EndDate { get; set; }
+
+        public DateOnly MinDate { get; set; }
+        public DateOnly MaxDate { get; set; }
+        
+        public IEnumerable<ValidationResult> Validate(ValidationContext context)
+        {
+            if (StartDate < MinDate || StartDate > MaxDate)
+            {
+                yield return new ValidationResult(
+                    $"La fecha de inicio debe estar entre {MinDate:dd/MM/yyyy} y {MaxDate:dd/MM/yyyy}.",
+                    new[] { nameof(StartDate) }
+                );
+            }
+
+            if (EndDate < MinDate || EndDate > MaxDate)
+            {
+                yield return new ValidationResult(
+                    $"La fecha de fin debe estar entre {StartDate:dd/MM/yyyy} y {MaxDate:dd/MM/yyyy}.",
+                    new[] { nameof(EndDate) }
+                );
+            }
+        }
+    }
+
+    private void delTask(Task task)
+    {
+        foreach (Resource r in task.Resources)
+        {
+            r.ResourceUsedComp.Remove(r.ResourceUsedComp.FirstOrDefault(ru=> ru.Task == task.Name));
+        }
+        ProjectManager.deleteTask(SelProject, task);
+        Projects = ProjectManager.getAllProjects().ToList();
+        SelProject = ProjectManager.getProjectsByName(SelProject.Name);
+        SelectedProject.Clear();
+        SelectedProject[SelProject] = true;
+    }
+    
+    private void delMember(User user)
+    {   
+        ProjectManager.deleteUser(SelProject, user);
+        Projects = ProjectManager.getAllProjects().ToList();
+        SelProject = ProjectManager.getProjectsByName(SelProject.Name);
+        SelectedProject.Clear();
+        SelectedProject[SelProject] = true;
+    }
+}

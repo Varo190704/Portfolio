@@ -1,0 +1,58 @@
+﻿@page "/logout"
+
+@inject NavigationManager Navigation
+@inject IUserManager UserManager
+
+<PageTitle>Salir de sesión</PageTitle>
+@if (Users.Any(u => u.login))
+{
+    <h3>Salir de Sesión</h3>
+        <div class="mb-3">
+            <p><strong>Nombre:</strong> @uslogged.Name</p>
+            <p><strong>Apellido:</strong> @uslogged.Surname</p>
+            <p><strong>Cumpleaños:</strong> @uslogged.BirthDate</p>
+        </div>
+
+    <button class="btn btn-primary" @onclick="logOutUser">
+        Cerrar Sesión
+    </button>
+}
+else
+{
+    <h5>Atención:</h5>
+    <p> No existe una sesión activa.
+        Si necesitas una sesion de usuario, por favor inicia sesion de manera correcta antes de continuar.</p> 
+    <small>(Este código no contempla errores de “Capa 8”)</small>
+}
+
+@code
+{
+    private List<User> Users;
+    private User uslogged = new User();
+
+    protected override void OnInitialized()
+    {
+        Users = UserManager.getAllUsers().ToList();
+        foreach (User us in Users)
+        {
+            if (us.login)
+            {
+                uslogged = us;
+            }
+        }
+    }
+
+    private void logOutUser()
+    {
+        foreach (User user in Users)
+        {
+            if (user.login)
+            {
+                user.login = false;
+                UserManager.updateUser(user);
+            }
+        } 
+        Users = UserManager.getAllUsers().ToList();
+        Navigation.NavigateTo("/");
+    }
+}

@@ -1,0 +1,84 @@
+﻿@page "/login"
+@using System.ComponentModel.DataAnnotations
+
+@inject NavigationManager Navigation
+@inject IUserManager UserManager
+<PageTitle>Inicio de sesión</PageTitle>
+@if (current==null)
+{
+    <h3>Inicio de Sesión</h3>
+        <EditForm Model="@logUser" OnValidSubmit="loginUser">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <InputText class="form-control" @bind-Value="logUser.Email" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Contraseña</label>
+                <InputText class="form-control" @bind-Value="logUser.Password" />
+            </div>
+
+            @if (showError)
+            {
+                <div class="alert alert-danger mb-3" role="alert">
+                    <strong>Error:</strong> @errorMessage
+                </div>
+            }
+            <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+        </EditForm>
+}
+else
+{
+    <h5>Atención:</h5>
+    <p> Ya existe una sesión activa como <strong>@current.Name con mail @current.Email.</strong>
+        Si necesitas la sesion de otro usuario, por favor cierra la sesión actual antes de continuar.</p> 
+    <small>Se avisa por las dudas que este código no contempla errores de Capa 8 en su mayoría</small>
+}
+
+@code
+{
+    private List<User> Users;
+    private UserViewModel logUser = new UserViewModel();
+    private bool showError = false;
+    private string errorMessage;
+    private User current;
+
+    protected override void OnInitialized()
+    {
+        Users = UserManager.getAllUsers().ToList();
+        current = Users.Find(u => u.login);
+    }
+    
+    private void loginUser()
+    {
+        User user = UserManager.getUserByName(logUser.Email);
+        if (user == null)
+        {
+            showError = true;
+            errorMessage = "Email invalido";
+        }
+        else if (!Equals(user.Password, logUser.Password) )
+        {
+            showError = true;
+            errorMessage = "Credenciales invalidas";
+        }
+        else
+        {
+            user.login = true;
+            UserManager.updateUser(user);
+            Users = UserManager.getAllUsers().ToList();
+            Navigation.NavigateTo("/");
+        }
+    }
+    
+    public class UserViewModel
+    {
+        [Required(ErrorMessage = "El email es obligatoria.")]
+        public string Email { get; set; }
+        
+        [Required(ErrorMessage = "La password es obligatoria.")]
+        public string Password { get; set; }
+    }
+}

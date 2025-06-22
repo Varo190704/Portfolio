@@ -1,0 +1,151 @@
+﻿@page "/notifications"
+
+@using System.ComponentModel.DataAnnotations
+@using Domain.Enum
+
+@inject IAlertManager AlertManager
+@inject IProjectManager ProjectManager
+@inject IUserManager UserManager
+
+<PageTitle>Alertas</PageTitle>
+@if (current == null)
+{
+    <h5>Atención:</h5>
+    <p> No existe una sesión activa.
+        Necesitas una sesion de usuario, por favor inicia sesion de manera correcta antes de continuar.</p> 
+    <small>(Este código no contempla errores de “Capa 8”)</small>
+}
+else
+{
+    <h3>Notificaciones</h3>
+
+    if (UserManager.getUserByName("admin@sistema.com").login)
+    {
+        <EditForm Model="@newAlert" OnValidSubmit="CreateAlert">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label class="form-label">Descripción de la Alert</label>
+                <InputTextArea class="form-control" @bind-Value="newAlert.Description" maxlength="400" />
+            </div>
+        
+            <InputSelect class="form-select" @bind-Value="newAlert.UserEmail">
+                <option value="non">-- elige un Usuario --</option>
+                @foreach (User t in Users)
+                {
+                    <option value="@t.Email">@t.Email</option>
+                }
+            </InputSelect>
+        
+            <button type="submit" class="btn btn-success">Crear Alerta</button>
+        
+        </EditForm>
+    }
+    if(alerts.Count > 0)
+    {
+        <br>
+        <div class="list-group mb-4">
+            <div class="card p-3">
+                <h3>Alertas Existentes</h3>
+                @foreach (Alert p in alerts)
+                {
+                    if (UserManager.getUserByName(p.Email).login || UserManager.getUserByName("admin@sistema.com").login)
+                    {
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>@p.Message</span>
+                            <button class="btn btn-sm btn-outline-primary" @onclick="() => DeleteAlert(p)">Borrar</button>
+                        </div>
+                    }
+                }
+            </div>
+        </div> 
+    }
+}
+
+@code {
+    private List<Alert> alerts;
+    private AlertViewModel newAlert = new();
+    private List<User> Users;
+    private User current;
+
+    protected override void OnInitialized()
+    {
+        Users = UserManager.getAllUsers().ToList();
+        current = Users.Find(u => u.login);
+        alerts = AlertManager.getAllAlerts().ToList();
+        genAlerts();
+    }
+    
+    private void CreateAlert()
+    {
+        string desc = newAlert.Description;
+        int id;
+        if (alerts.Count > 0)
+        {
+            id = alerts.Count+1;
+            Alert last = alerts[alerts.Count - 1];
+        }
+        else
+        {
+            id = 1;
+        }
+        Alert alert = new Alert(desc, id, newAlert.UserEmail);
+        AlertManager.createAlert(alert);
+        genAlerts();
+        alerts = AlertManager.getAllAlerts().ToList();
+        newAlert = new AlertViewModel();
+    }
+
+    public void DeleteAlert(Alert a)
+    {
+        AlertManager.deleteAlert(a);
+        genAlerts();
+        alerts = AlertManager.getAllAlerts().ToList();
+    }
+
+    public void genAlerts()
+    {
+        DateOnly now = DateOnly.FromDateTime(DateTime.Today);
+        List<Project> projects = ProjectManager.getAllProjects().ToList();
+        foreach (Project p in projects)
+        {
+            foreach (Task t in p.Tasks)
+            {
+                foreach (User u in p.Members)
+                {
+                    if (u.tasks.Contains(t) || Equals(u, p.Admin) || Equals(u.AdminSistem))
+                    {
+                        if (t.EndDate < now && t.Status != TaskProgress.Completed)
+                        {
+                            string desc = $"La tarea {t.Name} vencio el {t.EndDate:d}";
+                            int id = 1;
+                            if (alerts.Count != 0)
+                            {
+                                id = alerts.Count + 1;
+                            }
+                            AlertManager.createAlert(new Alert(desc, id, u.Email));
+                            alerts = AlertManager.getAllAlerts().ToList();
+                        }
+                    }
+                }
+                if (t.EndDate < now && t.Status != TaskProgress.Completed)
+                {
+                    t.EndDate = now;
+                    p.refreshTimes();
+                    ProjectManager.updateProject(p);
+                }
+            }
+        }
+    }
+    
+    public class AlertViewModel
+    {
+        [Required(ErrorMessage = "La descripción es obligatoria.")]
+        public string Description { get; set; }
+        
+        [Required(ErrorMessage = "Selecciona un tipo.")]
+        [NotNon(ErrorMessage = "No es válido tu selección")]
+        public string UserEmail { get; set; }
+    }
+}
