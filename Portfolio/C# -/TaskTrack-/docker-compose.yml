@@ -1,0 +1,35 @@
+services:
+    sqlserver:
+        image: mcr.microsoft.com/azure-sql-edge
+        container_name: sqlserver
+        environment:
+            SA_PASSWORD: "Passw1rd"
+            ACCEPT_EULA: "Y"
+        ports:
+            - "1433:1433"
+        volumes:
+            - ./data:/var/opt/mssql/data 
+            - ./db:/docker-entrypoint-initdb.d:ro 
+        command: >
+            bash -c "
+                /opt/mssql/bin/sqlservr &
+                sleep 20 &&
+                for f in /docker-entrypoint-initdb.d/*.sql; do
+                echo \"Ejecutando \$f\" &&
+                /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Passw1rd -i \"\$f\";
+                done
+            "
+            
+    app:
+    build:
+    context: .
+    dockerfile: Dockerfile
+    depends_on:
+    - sqlserver
+    environment:
+    ConnectionStrings__TaskTrackPro: "Server=sqlserver,1433;Database=TaskTrackPro;User Id=sa;Password=Passw1rd;TrustServerCertificate=True;"
+    ports:
+    - "5000:80"
+
+volumes:
+sqlserverdata:
