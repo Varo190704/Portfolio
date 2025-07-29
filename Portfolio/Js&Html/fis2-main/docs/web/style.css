@@ -1,0 +1,150 @@
+body {
+  background-color: #f8f9fa;
+}
+
+.centro {
+  margin-left: 10%;
+  margin-right: 10%;
+}
+
+.centro2 {
+  margin-right: 4%;
+  margin-left: 10%;
+}
+
+.fotito,
+.logo,
+.esquina {
+  border-radius: 50%;
+  width: 4rem;
+  height: 4rem;
+}
+
+li {
+  list-style: none;
+}
+
+.form-control {
+  background-color: #f0dddd;
+}
+
+.verde {
+  background-color: #77af47;
+}
+
+.circulo {
+  width: 160px;
+  height: 160px;
+  background-color: #f0dddd;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.blanco {
+  width: 70%;
+  height: 70%;
+  background-color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.box {
+  background-color: #f0dddd;
+  border-radius: 10px;
+}
+
+#menu {
+  display: none; /* Inicialmente oculto */
+  position: relative;
+  width: 100%;
+  height: auto;
+}
+
+.menu {
+  background-color: transparent;
+  border: 2px solid;
+  margin-bottom: 10px;
+  cursor: pointer;
+  font-size: 2vw;
+  display: block;
+}
+
+#diaATrabajar {
+  display: none; /* Inicialmente oculto */
+  position: relative;
+  width: 100%;
+  height: auto;
+}
+
+/*para el calendario*/
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  width: 14.28%;
+  padding: 10px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+.selected {
+  background-color: #77af47;
+  color: white;
+  font-weight: bold;
+  border-radius: 5px;
+}
+
+.weekend {
+  background-color: #d3d3d3;
+  color: #333;
+}
+
+.holiday {
+  background-color: #77af47;
+  color: white;
+  font-weight: bold;
+}
+
+.vacation {
+  background-color: #5cb85c;
+  color: white;
+  font-weight: bold;
+}
+
+.empty {
+  background-color: #eee;
+  pointer-events: none;
+}
+
+.box2 {
+  background-color: #dfeb81;
+}
+
+.grafica {
+  width: 100px;
+  height: 100px;
+  position: relative;
+  border-radius: 50%;
+  background: conic-gradient(
+    #77af47 0%,
+    #77af47 var(--porcentaje, 0%),
+    #f0dddd var(--porcentaje, 0%),
+    #f0dddd 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
